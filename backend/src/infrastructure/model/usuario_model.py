@@ -1,6 +1,5 @@
-from config.database import db
+from src.config.database import db
 from datetime import datetime
-
 class UsuarioModel(db.Model):
     __tablename__ = 'usuarios'
     __table_args__ = {'extend_existing': True}  #

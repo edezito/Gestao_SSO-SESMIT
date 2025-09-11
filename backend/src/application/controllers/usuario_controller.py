@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
-from application.services.usuario_service import UsuarioService
-from domain.usuario_domain import UserDomain
-
+from src.application.services.usuario_service import UsuarioService
+from src.domain.usuario_domain import UserDomain
 usuario_bp = Blueprint('usuario_bp', __name__)
 
 @usuario_bp.route('/cadastro', methods=['POST'])

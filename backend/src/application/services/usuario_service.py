@@ -1,9 +1,9 @@
 # Lógica de negócio
 
-from infrastructure.model.usuario_model import UsuarioModel
-from config.database import db
-from domain.usuario_domain import UserDomain
-from utils.security import hash_senha, verificar_senha, gerar_token
+from src.infrastructure.model.usuario_model import UsuarioModel
+from src.config.database import db
+from src.domain.usuario_domain import UserDomain
+from src.utils.security import hash_senha, verificar_senha, gerar_token
 
 class UsuarioService:
 

@@ -1,4 +1,4 @@
-from config.database import bcrypt
+from src.config.database import bcrypt
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
 

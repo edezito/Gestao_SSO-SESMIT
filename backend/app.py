@@ -1,5 +1,5 @@
 from flask import Flask
-from config.database import init_db
+from src.config.database import init_db
 from src.application.controllers.usuario_controller import usuario_bp
 import os
 
