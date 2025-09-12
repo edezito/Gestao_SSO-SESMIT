@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS  # <--- Import CORS
 from src.config.database import init_db
 from src.application.controllers.usuario_controller import usuario_bp
 import os
@@ -16,6 +17,9 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET')
+
+    # Habilita CORS para todas as origens (pode restringir depois para frontend específico)
+    CORS(app, origins=["http://localhost:3000"], supports_credentials=True)
 
     # Inicializa banco e extensões
     init_db(app)

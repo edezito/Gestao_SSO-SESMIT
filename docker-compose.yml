@@ -13,17 +13,28 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
-  web:
-    build: .
+  backend:
+    build:
+      context: ./backend
     container_name: sso-flask
     ports:
       - "5000:5000"
     volumes:
-      - .:/app
+      - ./backend:/app
     env_file:
       - .env
     depends_on:
       - db
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: sso-react
+    ports:
+      - "3000:80"
+    # REMOVEMOS A VARIÁVEL DE AMBIENTE DAQUI
+    depends_on:
+      - backend
 
 volumes:
   db_data:
