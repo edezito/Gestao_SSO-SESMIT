@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 
+
 # Inicialização das extensões
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -19,6 +20,7 @@ def init_db(app):
     with app.app_context():
         try:
             from src.infrastructure.model.usuario_model import UsuarioModel
+            from src.infrastructure.model import sso_model
 
             db.create_all()
             print("✅ Banco de dados inicializado e tabelas criadas com sucesso")
