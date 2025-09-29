@@ -20,7 +20,10 @@ def init_db(app):
     with app.app_context():
         try:
             from src.infrastructure.model.usuario_model import UsuarioModel
+            from src.infrastructure.model.exame_model import Exame 
             from src.infrastructure.model import sso_model
+            from src.infrastructure.model import cargo_model
+            from src.infrastructure.model import risco_model
 
             db.create_all()
             print("✅ Banco de dados inicializado e tabelas criadas com sucesso")
