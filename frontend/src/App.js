@@ -1,14 +1,27 @@
 import { useState } from "react";
 import Login from "./components/Login";
 import Cadastro from "./components/Cadastro";
+import Dashboard from "./components/Dashboard"; // Importamos o novo componente
 
 function App() {
-  const [token, setToken] = useState(null);
+  // Vamos usar o localStorage para persistir o login ao recarregar a página
+  const [token, setToken] = useState(localStorage.getItem("authToken"));
   const [tela, setTela] = useState("login");
+
+  // Função para salvar o token no estado e no localStorage
+  const handleSetToken = (newToken) => {
+    if (newToken) {
+      localStorage.setItem("authToken", newToken);
+    } else {
+      localStorage.removeItem("authToken");
+    }
+    setToken(newToken);
+  };
 
   return (
     <div style={styles.appContainer}>
       {!token ? (
+        // --- ÁREA DE LOGIN E CADASTRO ---
         <div>
           <div style={styles.toggleContainer}>
             <button
@@ -16,7 +29,7 @@ function App() {
               disabled={tela === "login"}
               style={{
                 ...styles.toggleButton,
-                ...(tela === "login" ? styles.activeButton : {})
+                ...(tela === "login" ? styles.activeButton : {}),
               }}
             >
               Login
@@ -26,7 +39,7 @@ function App() {
               disabled={tela === "cadastro"}
               style={{
                 ...styles.toggleButton,
-                ...(tela === "cadastro" ? styles.activeButton : {})
+                ...(tela === "cadastro" ? styles.activeButton : {}),
               }}
             >
               Cadastrar
@@ -34,32 +47,27 @@ function App() {
           </div>
 
           {tela === "login" ? (
-            <Login setToken={setToken} />
+            <Login setToken={handleSetToken} />
           ) : (
             <Cadastro />
           )}
         </div>
       ) : (
-        <div style={styles.welcomeBox}>
-          <h1 style={styles.welcomeTitle}>Bem-vindo!</h1>
-          <p style={styles.tokenInfo}>
-            Usuário logado com token: <code>{token}</code>
-          </p>
-        </div>
+        // --- ÁREA LOGADA ---
+        // Se o usuário tem um token, mostramos o Dashboard
+        <Dashboard token={token} onLogout={() => handleSetToken(null)} />
       )}
     </div>
   );
 }
 
+// Estilos (mantidos, mas poderiam ir para um App.css)
 const styles = {
   appContainer: {
-    maxWidth: "450px",
-    margin: "50px auto",
+    maxWidth: "900px",
+    margin: "40px auto",
     fontFamily: "'Segoe UI', sans-serif",
-    backgroundColor: "#f9f9f9",
     padding: "20px",
-    borderRadius: "10px",
-    boxShadow: "0 0 12px rgba(0, 0, 0, 0.05)",
   },
   toggleContainer: {
     display: "flex",
@@ -77,26 +85,10 @@ const styles = {
     transition: "all 0.3s ease",
   },
   activeButton: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#007bff",
     color: "#fff",
-    borderColor: "#4CAF50",
+    borderColor: "#007bff",
     cursor: "default",
-  },
-  welcomeBox: {
-    textAlign: "center",
-    backgroundColor: "#fff",
-    padding: "30px",
-    borderRadius: "8px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
-  },
-  welcomeTitle: {
-    color: "#333",
-    marginBottom: "10px",
-  },
-  tokenInfo: {
-    fontSize: "14px",
-    color: "#555",
-    wordBreak: "break-all",
   },
 };
 

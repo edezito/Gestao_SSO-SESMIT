@@ -45,6 +45,10 @@ class UsuarioService:
 
         db.session.commit()
         return usuario
+    
+    @staticmethod
+    def listar_colaboradores():
+        return UsuarioModel.query.filter_by(perfil='COLABORADOR', ativo=True).all()
 
     @staticmethod
     def desativar_usuario(usuario_id: int):

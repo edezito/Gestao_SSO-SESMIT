@@ -47,3 +47,14 @@ def desativar_usuario(id):
         return jsonify({'msg': 'Usuário desativado', 'id': usuario.id})
     except ValueError as e:
         return jsonify({'erro': str(e)}), 400
+
+@usuario_bp.route("/colaboradores", methods=["GET"])
+def listar_colaboradores():
+    colaboradores = UsuarioService.listar_colaboradores()
+    if not colaboradores:
+        return jsonify([])
+        
+    return jsonify([{
+        "id": c.id,
+        "nome": c.nome
+    } for c in colaboradores])

@@ -1,3 +1,5 @@
+from datetime import datetime
+from unittest import case
 from src.infrastructure.model.exame_model import Exame
 from src.config.database import db
 
@@ -27,8 +29,15 @@ class ExameService:
 
     @staticmethod
     def buscar_por_status(status):
-        exames = Exame.query.all()
-        return [e for e in exames if e.status == status.upper()]
+        status = status.upper()
+        
+        status_expression = case(
+            (Exame.data_realizacao != None, "REALIZADO"),
+            (Exame.data_agendamento < datetime.utcnow(), "VENCIDO"),
+            else_="PENDENTE"
+        )
+        
+        return Exame.query.filter(status_expression == status).all()
 
     @staticmethod
     def atualizar(exame_id, **kwargs):

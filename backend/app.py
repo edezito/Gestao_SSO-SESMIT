@@ -3,11 +3,7 @@ from dotenv import load_dotenv
 from flask_cors import CORS  # <--- Import CORS
 from src.config.database import init_db
 from src.application.controllers.usuario_controller import usuario_bp
-from src.application.controllers.programa_risco_controller import programa_bp
-from src.application.controllers.risco_controller import risco_bp
 from src.application.controllers.exame_controller import exame_bp
-from src.application.controllers.cargo_controller import cargo_bp
-from src.application.controllers.dashboard_controller import dashboard_bp
 import os
 
 load_dotenv()
@@ -34,12 +30,7 @@ def create_app():
 
     # Registrar Blueprints
     app.register_blueprint(usuario_bp)
-    app.register_blueprint(programa_bp)
-    app.register_blueprint(risco_bp)
     app.register_blueprint(exame_bp)
-    app.register_blueprint(cargo_bp)
-    app.register_blueprint(dashboard_bp)
-
     return app
 
 if __name__ == "__main__":
