@@ -6,10 +6,18 @@ function Dashboard({ token, onLogout }) {
   const [telaAtiva, setTelaAtiva] = useState('lista');
 
   return (
-    <div style={styles.dashboardContainer}>
+    <div>
       <header style={styles.header}>
-        <h1 style={styles.title}>Painel de Gestão SSO</h1>
-        <div style={styles.nav}>
+        <h1 style={styles.title}>Sistema de Gestão SSO</h1>
+        <button style={styles.logoutButton} onClick={onLogout}>
+          Sair
+        </button>
+      </header>
+
+      {/* CONTEÚDO CENTRALIZADO */}
+      <div style={styles.dashboardContainer}>
+        {/* NAVEGAÇÃO ENTRE TELAS */}
+        <nav style={styles.nav}>
           <button
             style={telaAtiva === 'lista' ? styles.navButtonActive : styles.navButton}
             onClick={() => setTelaAtiva('lista')}
@@ -22,72 +30,85 @@ function Dashboard({ token, onLogout }) {
           >
             Agendar Novo Exame
           </button>
-        </div>
-        <button style={styles.logoutButton} onClick={onLogout}>
-          Sair
-        </button>
-      </header>
+        </nav>
 
-      <main style={styles.mainContent}>
-        {telaAtiva === 'lista' && <ListaColaboradoresExames token={token} />}
-        {telaAtiva === 'agendar' && <AgendarExame token={token} />}
-      </main>
+        {/* CONTEÚDO PRINCIPAL */}
+        <main style={styles.mainContent}>
+          {telaAtiva === 'lista' && <ListaColaboradoresExames token={token} />}
+          {telaAtiva === 'agendar' && <AgendarExame token={token} />}
+        </main>
+      </div>
     </div>
   );
 }
 
 const styles = {
-    dashboardContainer: {
-        backgroundColor: '#f9f9f9',
-        borderRadius: '10px',
-        boxShadow: '0 0 15px rgba(0, 0, 0, 0.07)',
-        padding: '25px',
-    },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '1px solid #ddd',
-        paddingBottom: '20px',
-        marginBottom: '20px',
-    },
-    title: {
-        color: '#333',
-        margin: 0,
-    },
-    nav: {
-        display: 'flex',
-        gap: '15px',
-    },
-    navButton: {
-        padding: '10px 15px',
-        fontSize: '15px',
-        border: '1px solid #ccc',
-        backgroundColor: 'white',
-        borderRadius: '5px',
-        cursor: 'pointer',
-    },
-    navButtonActive: {
-        padding: '10px 15px',
-        fontSize: '15px',
-        border: '1px solid #007bff',
-        backgroundColor: '#007bff',
-        color: 'white',
-        borderRadius: '5px',
-        cursor: 'pointer',
-    },
-    logoutButton: {
-        padding: '10px 15px',
-        fontSize: '15px',
-        border: 'none',
-        backgroundColor: '#dc3545',
-        color: 'white',
-        borderRadius: '5px',
-        cursor: 'pointer',
-    },
-    mainContent: {
-        padding: '10px 0',
-    },
+  header: {
+    width: '100vw',
+    backgroundColor: '#007bff',
+    color: 'white',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '20px 40px',
+    boxSizing: 'border-box',
+  },
+
+  title: {
+    margin: 0,
+    fontSize: '22px',
+    fontWeight: 'bold',
+  },
+
+  logoutButton: {
+    backgroundColor: '#dc3545',
+    color: 'white',
+    border: 'none',
+    padding: '10px 15px',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    fontSize: '14px',
+  },
+
+  dashboardContainer: {
+    maxWidth: '1200px',
+    margin: '40px auto',
+    padding: '30px 20px',
+    backgroundColor: '#fdfdfd',
+    borderRadius: '8px',
+    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
+  },
+
+  nav: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '20px',
+    marginBottom: '30px',
+  },
+
+  navButton: {
+    padding: '10px 20px',
+    fontSize: '15px',
+    border: '1px solid #ccc',
+    backgroundColor: '#fff',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+
+  navButtonActive: {
+    padding: '10px 20px',
+    fontSize: '15px',
+    border: '1px solid #007bff',
+    backgroundColor: '#007bff',
+    color: '#fff',
+    borderRadius: '5px',
+    cursor: 'pointer',
+  },
+
+  mainContent: {
+    padding: '10px',
+  },
 };
 
 export default Dashboard;
