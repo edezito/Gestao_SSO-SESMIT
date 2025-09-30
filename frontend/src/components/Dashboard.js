@@ -14,9 +14,7 @@ function Dashboard({ token, onLogout }) {
         </button>
       </header>
 
-      {/* CONTEÚDO CENTRALIZADO */}
       <div style={styles.dashboardContainer}>
-        {/* NAVEGAÇÃO ENTRE TELAS */}
         <nav style={styles.nav}>
           <button
             style={telaAtiva === 'lista' ? styles.navButtonActive : styles.navButton}
@@ -32,7 +30,6 @@ function Dashboard({ token, onLogout }) {
           </button>
         </nav>
 
-        {/* CONTEÚDO PRINCIPAL */}
         <main style={styles.mainContent}>
           {telaAtiva === 'lista' && <ListaColaboradoresExames token={token} />}
           {telaAtiva === 'agendar' && <AgendarExame token={token} />}
@@ -64,7 +61,7 @@ const styles = {
     backgroundColor: '#dc3545',
     color: 'white',
     border: 'none',
-    padding: '10px 15px',
+    padding: '10px 20px',
     borderRadius: '5px',
     cursor: 'pointer',
     fontSize: '14px',
