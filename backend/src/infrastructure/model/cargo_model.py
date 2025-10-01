@@ -1,21 +1,16 @@
 from src.config.database import db
+from datetime import datetime, timezone
 
-riscos_cargos = db.Table(
-    "riscos_cargos",
-    db.Column("cargo_id", db.Integer, db.ForeignKey("cargos.id"), primary_key=True),
-    db.Column("risco_id", db.Integer, db.ForeignKey("riscos.id"), primary_key=True),
-)
+class CargoModel(db.Model):
+    __tablename__ = 'cargos'
+    __table_args__ = {'extend_existing': True}
 
-exames_cargos = db.Table(
-    "exames_cargos",
-    db.Column("cargo_id", db.Integer, db.ForeignKey("cargos.id"), primary_key=True),
-    db.Column("exame_id", db.Integer, db.ForeignKey("exames.id"), primary_key=True),
-)
-
-class Cargo(db.Model):
-    __tablename__ = "cargos"
     id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(100), unique=True, nullable=False)
+    nome = db.Column(db.String(100), nullable=False, unique=True)
+    descricao = db.Column(db.Text, nullable=True)
 
-    riscos = db.relationship("Risco", secondary=riscos_cargos, backref="cargos")
-    exames = db.relationship("Exame", secondary=exames_cargos, backref="cargos")
+    # Relacionamento com usuários
+    usuarios = db.relationship("UsuarioModel", back_populates="cargo", lazy='subquery')
+
+    def __repr__(self):
+        return f'<Cargo {self.nome}>'

@@ -1,0 +1,88 @@
+.container {
+  margin: 20px 0;
+  width: 100%;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+  font-size: 22px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.input, .select {
+  padding: 10px 12px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  background-color: #fefefe;
+}
+
+/* Estilo BASE do botão */
+.buttonBase {
+  padding: 12px;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.1s ease; /* Transição no filtro */
+  font-weight: bold;
+  
+  background-color: var(--button-bg-color, #6c757d); 
+}
+
+.buttonBase:hover {
+  filter: brightness(0.9);
+}
+
+.buttonBase:active {
+  transform: scale(0.98);
+  filter: brightness(0.8);
+}
+
+/* Estilos de Mensagem */
+.message {
+  text-align: center;
+  margin-bottom: 10px;
+  font-weight: bold;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.messageSuccess {
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+}
+
+.messageError {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  margin-bottom: 6px;
+  font-weight: bold;
+  color: #333;
+  font-size: 14px;
+}
+
+.loadingText {
+  font-style: italic;
+  color: #555;
+  padding: 10px 0;
+}

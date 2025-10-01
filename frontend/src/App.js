@@ -1,103 +1,43 @@
-import { useState } from "react";
-import Login from "./components/Login";
-import Cadastro from "./components/Cadastro";
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AuthPage from './pages/AuthPage/AuthPage';
+import DashboardPage from './pages/DashboardPage/DashboardPage';
 
 function App() {
-  const [token, setToken] = useState(null);
-  const [tela, setTela] = useState("login");
+  const [token, setToken] = useState(localStorage.getItem("authToken"));
+
+  const handleSetToken = (newToken) => {
+    if (newToken) {
+      localStorage.setItem("authToken", newToken);
+    } else {
+      localStorage.removeItem("authToken");
+    }
+    setToken(newToken);
+  };
 
   return (
-    <div style={styles.appContainer}>
-      {!token ? (
-        <div>
-          <div style={styles.toggleContainer}>
-            <button
-              onClick={() => setTela("login")}
-              disabled={tela === "login"}
-              style={{
-                ...styles.toggleButton,
-                ...(tela === "login" ? styles.activeButton : {})
-              }}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => setTela("cadastro")}
-              disabled={tela === "cadastro"}
-              style={{
-                ...styles.toggleButton,
-                ...(tela === "cadastro" ? styles.activeButton : {})
-              }}
-            >
-              Cadastrar
-            </button>
-          </div>
+    <BrowserRouter>
+      <Routes>
+        {/* Rota de Autenticação */}
+        <Route 
+          path="/auth" 
+          element={!token ? <AuthPage setToken={handleSetToken} /> : <Navigate to="/dashboard" />}
+        />
 
-          {tela === "login" ? (
-            <Login setToken={setToken} />
-          ) : (
-            <Cadastro />
-          )}
-        </div>
-      ) : (
-        <div style={styles.welcomeBox}>
-          <h1 style={styles.welcomeTitle}>Bem-vindo!</h1>
-          <p style={styles.tokenInfo}>
-            Usuário logado com token: <code>{token}</code>
-          </p>
-        </div>
-      )}
-    </div>
+        {/* Rota do Dashboard (Protegida) */}
+        <Route 
+          path="/dashboard" 
+          element={token ? <DashboardPage token={token} onLogout={() => handleSetToken(null)} /> : <Navigate to="/auth" />}
+        />
+
+        {/* Rota Padrão: redireciona para o local correto */}
+        <Route 
+          path="*" 
+          element={<Navigate to={token ? "/dashboard" : "/auth"} />} 
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-const styles = {
-  appContainer: {
-    maxWidth: "450px",
-    margin: "50px auto",
-    fontFamily: "'Segoe UI', sans-serif",
-    backgroundColor: "#f9f9f9",
-    padding: "20px",
-    borderRadius: "10px",
-    boxShadow: "0 0 12px rgba(0, 0, 0, 0.05)",
-  },
-  toggleContainer: {
-    display: "flex",
-    justifyContent: "center",
-    gap: "10px",
-    marginBottom: "25px",
-  },
-  toggleButton: {
-    padding: "10px 20px",
-    fontSize: "16px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-    backgroundColor: "#eee",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-  },
-  activeButton: {
-    backgroundColor: "#4CAF50",
-    color: "#fff",
-    borderColor: "#4CAF50",
-    cursor: "default",
-  },
-  welcomeBox: {
-    textAlign: "center",
-    backgroundColor: "#fff",
-    padding: "30px",
-    borderRadius: "8px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
-  },
-  welcomeTitle: {
-    color: "#333",
-    marginBottom: "10px",
-  },
-  tokenInfo: {
-    fontSize: "14px",
-    color: "#555",
-    wordBreak: "break-all",
-  },
-};
 
 export default App;

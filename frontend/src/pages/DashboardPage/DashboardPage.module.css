@@ -1,0 +1,84 @@
+/* Estilos de layout para a página do Dashboard */
+
+.pageWrapper {
+  background-color: #f4f7f6;
+  min-height: 100vh;
+}
+
+.header {
+  width: 100%;
+  background-color: #007bff;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 40px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-sizing: border-box;
+}
+
+.headerTitle {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.logoutButton {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.logoutButton:hover {
+  background-color: #c82333;
+}
+
+.dashboardContainer {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 30px 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.nav {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 20px;
+}
+
+.navButton {
+  padding: 10px 20px;
+  font-size: 15px;
+  border: none;
+  background-color: transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #495057;
+  font-weight: 500;
+}
+
+.navButton:hover {
+  background-color: #e9ecef;
+}
+
+.navButtonActive {
+  background-color: #007bff;
+  color: #fff;
+  font-weight: 600;
+}
+
+.mainContent {
+  padding: 10px;
+}
