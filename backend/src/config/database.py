@@ -21,6 +21,9 @@ def init_db(app):
         try:
             from src.infrastructure.model.usuario_model import UsuarioModel
             from src.infrastructure.model.exame_model import Exame
+            from src.infrastructure.model.programa_risco_model import ProgramaRiscoModel
+            from src.infrastructure.model.risco_model import RiscoModel
+            from src.infrastructure.model.cargo_model import CargoModel
             
             db.create_all()
             print("✅ Banco de dados inicializado e tabelas criadas com sucesso")
