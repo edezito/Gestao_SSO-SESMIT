@@ -1,4 +1,4 @@
-const API_URL = "/api";
+const API_URL = "/http://localhost:5000";
 
 export async function cadastroUsuario(data) {
   const res = await fetch(`${API_URL}/cadastro`, {
