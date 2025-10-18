@@ -24,6 +24,6 @@ def listar_cargos():
 def gerar_exames_cargo(cargo_id):
     dados = request.json or {}
     tipo = dados.get("tipo_exame", "PERIODICO")
-    data_agendamento = dados.get("data_agendamento")  # se quiser, aceite string ISO e transforme
+    data_agendamento = dados.get("data_agendamento")
     created = VinculoService.gerar_exames_automaticos_por_cargo(cargo_id, tipo_exame_default=tipo, agendar_data=data_agendamento)
     return jsonify([{"id": e.id, "nome": e.nome, "colaborador_id": e.colaborador_id} for e in created])

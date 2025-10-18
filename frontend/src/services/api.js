@@ -1,57 +1,98 @@
-const API_URL = "/http://localhost:5000";
+// src/services/api.js
+import axios from 'axios';
 
-export async function cadastroUsuario(data) {
-  const res = await fetch(`${API_URL}/cadastro`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  return await res.json();
-}
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-export async function loginUsuario(data) {
-  const res = await fetch(`${API_URL}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  return await res.json();
-}
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-async function fetchAutenticado(endpoint, token, options = {}) {
-    const res = await fetch(`${API_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            ...options.headers,
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-        },
-    });
-
-    if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.erro || errorData.msg || `Erro na requisição para ${endpoint}`);
+// Interceptor para adicionar o token automaticamente
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    const contentType = res.headers.get("content-type");
-    if (contentType && contentType.indexOf("application/json") !== -1) {
-        return res.json();
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// --- INTERCEPTOR DE RESPOSTAS ATUALIZADO ---
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Mantém a lógica para deslogar em caso de token inválido (401)
+    if (error.response?.status === 401) {
+      localStorage.removeItem('authToken');
+      window.location.href = '/'; // Redireciona para o login
+      return Promise.reject(error); // Interrompe o fluxo aqui
     }
-    return {};
-}
 
-export function listarTodosExames(token) {
-  return fetchAutenticado("/exames", token);
-}
+    // ✅ NOVA LÓGICA: Trata o erro de permissão (422) na rota de exames
+    if (
+      error.response?.status === 422 &&
+      error.config?.url === '/exames'
+    ) {
+      // Garante que o objeto de dados exista para evitar erros
+      if (!error.response.data) {
+        error.response.data = {};
+      }
+      // Sobrescreve a mensagem de erro por uma mais clara e amigável
+      error.response.data.msg = "Acesso negado. Seu perfil não tem permissão para visualizar esta lista de exames.";
+    }
 
-export function listarColaboradores(token) {
-    return fetchAutenticado("/colaboradores", token);
-}
+    // Retorna o erro (agora modificado, se necessário) para o .catch() do componente
+    return Promise.reject(error);
+  }
+);
 
-export function agendarExame(dadosExame, token) {
-    return fetchAutenticado("/exames", token, {
-        method: "POST",
-        body: JSON.stringify(dadosExame),
-    });
-}
 
+// --- Funções de Autenticação ---
+export const loginUsuario = (credenciais) => 
+  api.post('/login', credenciais).then(res => res.data);
+
+export const cadastroUsuario = (usuario) => 
+  api.post('/cadastro', usuario).then(res => res.data);
+
+
+// --- Funções de Usuários/Colaboradores ---
+export const listarUsuarios = () => 
+  api.get('/colaboradores').then(res => res.data);
+
+export const atualizarUsuario = (id, usuario) => 
+  api.put(`/usuario/${id}`, usuario).then(res => res.data);
+
+export const excluirUsuario = (id) => 
+  api.delete(`/usuario/${id}`).then(res => res.data);
+
+
+// --- Funções de Exames ---
+export const agendarExame = (dadosExame) => 
+  api.post('/exames/agendar', dadosExame).then(res => res.data);
+
+export const listarTodosExames = () => 
+  api.get('/exames').then(res => res.data);
+
+
+// --- Funções de Cargos ---
+export const criarCargo = (cargo) => 
+  api.post('/cargos', cargo).then(res => res.data);
+
+export const listarCargos = () => 
+  api.get('/cargos').then(res => res.data);
+
+export const atualizarCargo = (id, cargo) => 
+  api.put(`/cargos/${id}`, cargo).then(res => res.data);
+
+export const excluirCargo = (id) => 
+  api.delete(`/cargos/${id}`).then(res => res.data);
+
+
+export default api;

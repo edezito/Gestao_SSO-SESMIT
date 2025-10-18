@@ -1,20 +1,31 @@
-# frontend/Dockerfile
-
-# build stage
+# Etapa de build
 FROM node:20-alpine AS build
 WORKDIR /app
+
+# Copiar apenas os manifests primeiro (melhor cache)
 COPY package*.json ./
-RUN npm install
+
+# Forçar reinstalação limpa das dependências
+RUN npm cache clean --force && npm install
+
+# Copiar o restante dos arquivos
 COPY . .
+
+# Garantir que as dependências estejam corretas
+RUN npm rebuild
+
+# Rodar o build
 RUN npm run build
 
-# production stage
+# Etapa de produção (Nginx)
 FROM nginx:alpine
-# Copia os arquivos da build do React
+
+# Copiar os arquivos do build
 COPY --from=build /app/build /usr/share/nginx/html
-# Remove a configuração padrão do Nginx
+
+# Remover config padrão e adicionar a customizada
 RUN rm /etc/nginx/conf.d/default.conf
-# Copia a sua nova configuração para o lugar certo
 COPY nginx.conf /etc/nginx/conf.d/
+
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

@@ -15,7 +15,7 @@ class UsuarioService:
         usuario = UsuarioModel(
             nome=user_domain.nome,
             email=user_domain.email,
-            senha=hash_senha(user_domain.senha),
+            senha=hash_senha(user_domain.senha), # Perfeito!
             perfil=user_domain.perfil
         )
         db.session.add(usuario)
@@ -25,9 +25,13 @@ class UsuarioService:
     @staticmethod
     def autenticar(email: str, senha: str):
         usuario = UsuarioModel.query.filter_by(email=email, ativo=True).first()
-        if not usuario or not verificar_senha(senha, usuario.senha):
+        
+        if not usuario or not verificar_senha(usuario.senha, senha):
             return None
-        token = gerar_token(usuario.id, usuario.perfil)
+        
+        perfil = usuario.perfil.upper() if usuario.perfil else None
+
+        token = gerar_token(usuario.id, perfil)
         return token
 
     @staticmethod
@@ -39,7 +43,7 @@ class UsuarioService:
         if nome:
             usuario.nome = nome
         if senha:
-            usuario.senha = hash_senha(senha)
+            usuario.senha = hash_senha(senha) # Perfeito!
         if perfil:
             usuario.perfil = perfil.upper()
 

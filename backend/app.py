@@ -28,9 +28,6 @@ def create_app():
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 
-    # Habilita CORS
-    CORS(app, origins=["http://localhost:3000"], supports_credentials=True)
-
     # Inicializa banco e extensões
     init_db(app)
 
@@ -38,12 +35,13 @@ def create_app():
     app.register_blueprint(usuario_bp)
     app.register_blueprint(exame_bp)
     app.register_blueprint(prog_bp)   
-    app.register_blueprint(risco_bp)  
-    app.register_blueprint(cargo_bp)  
+    app.register_blueprint(risco_bp)   
+    app.register_blueprint(cargo_bp)
 
+    CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
     return app
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True)
