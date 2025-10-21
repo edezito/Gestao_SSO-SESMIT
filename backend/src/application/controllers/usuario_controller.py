@@ -16,13 +16,18 @@ def cadastro():
             email=dados['email'],
             senha=dados['senha'],
             perfil=dados['perfil'],
-            cargo_id=dados.get('cargo_id')  # novo campo
+            cargo_id=dados.get('cargo_id')  # opcional
         )
         usuario = UsuarioService.criar_usuario(user_domain)
-        return jsonify({'msg': 'Usuário cadastrado', 'id': usuario.id})
+        return jsonify({'msg': 'Usuário cadastrado', 'id': usuario.id}), 201
+
     except ValueError as e:
         return jsonify({'erro': str(e)}), 400
-
+    except KeyError as e:
+        return jsonify({'erro': f"Campo obrigatório ausente: {e}"}), 400
+    except Exception as e:
+        return jsonify({'erro': f"Erro interno: {str(e)}"}), 500
+    
 # Rota pública: login
 @usuario_bp.route('/login', methods=['POST'])
 def login():
@@ -47,7 +52,8 @@ def gerenciar_usuario(id):
             usuario_id=id,
             nome=dados.get('nome'),
             senha=dados.get('senha'),
-            perfil=dados.get('perfil') if perfil != "COLABORADOR" else None
+            perfil=dados.get('perfil') if perfil != "COLABORADOR" else None,
+            cargo_id=dados.get('cargo_id') if perfil != "COLABORADOR" else None
         )
         return jsonify({'msg': 'Usuário atualizado', 'id': usuario.id})
 
