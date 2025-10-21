@@ -5,7 +5,7 @@ from src.domain.usuario_domain import UserDomain
 usuario_bp = Blueprint('usuario_bp', __name__)
 
 # Rota pública, sem proteção
-@usuario_bp.route('/cadastro', methods=['POST'])
+@usuario_bp.route('/cadastro', methods=['POST'] )
 def cadastro():
     dados = request.json
     try:

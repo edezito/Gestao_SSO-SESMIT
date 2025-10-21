@@ -3,7 +3,7 @@ from src.application.services.risco_service import RiscoService
 
 risco_bp = Blueprint("risco_bp", __name__, url_prefix="/riscos")
 
-@risco_bp.route("", methods=["POST"])
+@risco_bp.route("/", methods=["POST"])
 def criar_risco():
     dados = request.json
     risco = RiscoService.criar(
@@ -15,7 +15,7 @@ def criar_risco():
     )
     return jsonify({"id": risco.id, "nome": risco.nome})
 
-@risco_bp.route("", methods=["GET"])
+@risco_bp.route("/", methods=["GET"])
 def listar_riscos():
     riscos = RiscoService.listar()
     out = []

@@ -5,7 +5,7 @@ from src.infrastructure.model.usuario_model import UsuarioModel
 exame_bp = Blueprint("exame_bp", __name__)
 
 # Criar exame
-@exame_bp.route("/exames", methods=["POST"])
+@exame_bp.route("/exames", methods=["POST"] )
 def criar_exame():
     dados = request.json
     exame = ExameService.criar(

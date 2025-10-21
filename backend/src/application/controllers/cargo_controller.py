@@ -2,15 +2,15 @@ from flask import Blueprint, request, jsonify
 from src.application.services.cargo_service import CargoService
 from src.application.services.vinculo_service import VinculoService
 
-cargo_bp = Blueprint("cargo_bp", __name__, url_prefix="/cargos")
+cargo_bp = Blueprint("cargo_bp", __name__)
 
-@cargo_bp.route("", methods=["POST"])
+@cargo_bp.route("/", methods=["POST"])
 def criar_cargo():
     dados = request.json
     cargo = CargoService.criar(nome=dados.get("nome"), descricao=dados.get("descricao"), riscos_ids=dados.get("riscos_ids"))
     return jsonify({"id": cargo.id, "nome": cargo.nome})
 
-@cargo_bp.route("", methods=["GET"])
+@cargo_bp.route("/", methods=["GET"])
 def listar_cargos():
     cargos = CargoService.listar()
     return jsonify([{
