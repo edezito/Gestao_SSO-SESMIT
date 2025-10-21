@@ -1,0 +1,12 @@
+[33mdb5f0baf[m[33m ([m[1;36mHEAD[m[33m)[m HEAD@{0}: reset: moving to HEAD~
+[33m6726cd23[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{1}: checkout: moving from main to 6726cd2327479722d71f8837a2aa428189753620
+[33m34bd9357[m[33m ([m[1;32mmain[m[33m)[m HEAD@{2}: checkout: moving from main to main
+[33m34bd9357[m[33m ([m[1;32mmain[m[33m)[m HEAD@{3}: reset: moving to HEAD~
+[33md3f113e6[m HEAD@{4}: commit: .
+[33m34bd9357[m[33m ([m[1;32mmain[m[33m)[m HEAD@{5}: commit: backend finalizado
+[33mdb5f0baf[m[33m ([m[1;36mHEAD[m[33m)[m HEAD@{6}: reset: moving to HEAD~
+[33m6726cd23[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{7}: commit: backend finalizado
+[33mdb5f0baf[m[33m ([m[1;36mHEAD[m[33m)[m HEAD@{8}: commit: Ajustes backend
+[33m5f080e24[m HEAD@{9}: pull --tags origin main: Fast-forward
+[33mecd6f8e3[m HEAD@{10}: commit: testando commit
+[33m89717bd6[m HEAD@{11}: clone: from https://github.com/edezito/Gestao_SSO-SESMIT.git
