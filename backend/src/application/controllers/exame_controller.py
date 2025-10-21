@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from src.application.services.exame_service import ExameService
 from src.infrastructure.model.usuario_model import UsuarioModel
-from flask_jwt_extended import get_jwt
+from flask_jwt_extended import get_jwt, jwt_required
 from src.utils.decorators import roles_required
 
 exame_bp = Blueprint("exame_bp", __name__)
@@ -38,6 +38,7 @@ def criar_exame():
 
 
 @exame_bp.route("/exames", methods=["GET"])
+@jwt_required()
 @roles_required("COLABORADOR", "SESMIT", "GESTOR")
 def listar_exames():
     claims = get_jwt()

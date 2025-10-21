@@ -9,24 +9,39 @@ export default function Login({ onLogin }) {
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMsg('');
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setMsg('');
 
-    try {
-      const res = await loginUsuario({ email, senha });
-      if (res.access_token) {
-        onLogin(res.access_token);
-      }
-    } catch (error) {
-      // Usa a mensagem genérica do interceptor ou uma específica
-      const errorMsg = error.response?.data?.msg || error.response?.data?.erro || "Email ou senha incorretos.";
-      setMsg(errorMsg);
-    } finally {
-      setLoading(false);
+  try {
+    const res = await loginUsuario({ email, senha });
+    console.log("Login response:", res); // 🔹 Para debug
+
+    // Tenta pegar o token de diferentes formatos de resposta
+    const token = res?.access_token || res?.token || null;
+
+    if (token) {
+      // Salva token no localStorage
+      localStorage.setItem('authToken', token);
+      onLogin(token); // mantém seu fluxo de contexto
+      setMsg("✅ Login realizado com sucesso!");
+    } else {
+      // Caso não venha token
+      const errorMsg = res?.erro || "Falha ao autenticar. Tente novamente.";
+      setMsg(`❌ ${errorMsg}`);
     }
-  };
+
+  } catch (error) {
+    // Captura erros da requisição
+    const errorMsg = error.response?.data?.msg 
+                   || error.response?.data?.erro 
+                   || "Email ou senha incorretos.";
+    setMsg(`❌ ${errorMsg}`);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // O JSX (return) e os estilos permanecem os mesmos, pois já estão ótimos.
   return (
