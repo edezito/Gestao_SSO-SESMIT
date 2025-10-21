@@ -7,7 +7,7 @@ cargos_riscos = db.Table(
     db.Column("risco_id", db.Integer, db.ForeignKey("riscos.id"), primary_key=True)
 )
 
-class CargoModel(db.Model):
+class CargoModel(db.Model): 
     __tablename__ = "cargos"
 
     id = db.Column(db.Integer, primary_key=True)
