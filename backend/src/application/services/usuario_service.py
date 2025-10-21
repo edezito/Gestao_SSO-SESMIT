@@ -1,9 +1,8 @@
-# Lógica de negócio
-
 from src.infrastructure.model.usuario_model import UsuarioModel
 from src.config.database import db
 from src.domain.usuario_domain import UserDomain
 from src.utils.security import hash_senha, verificar_senha, gerar_token
+from src.application.services.vinculo_service import VinculoService
 
 class UsuarioService:
 
@@ -15,11 +14,17 @@ class UsuarioService:
         usuario = UsuarioModel(
             nome=user_domain.nome,
             email=user_domain.email,
-            senha=hash_senha(user_domain.senha), # Perfeito!
-            perfil=user_domain.perfil
+            senha=hash_senha(user_domain.senha),
+            perfil=user_domain.perfil,
+            cargo_id=getattr(user_domain, "cargo_id", None)
         )
         db.session.add(usuario)
         db.session.commit()
+
+        # Gerar exames automáticos se cargo definido
+        if usuario.cargo_id:
+            VinculoService.gerar_exames_automaticos_por_cargo(usuario.cargo_id)
+
         return usuario
 
     @staticmethod
@@ -30,12 +35,11 @@ class UsuarioService:
             return None
         
         perfil = usuario.perfil.upper() if usuario.perfil else None
-
         token = gerar_token(usuario.id, perfil)
         return token
 
     @staticmethod
-    def atualizar_usuario(usuario_id: int, nome: str = None, senha: str = None, perfil: str = None):
+    def atualizar_usuario(usuario_id: int, nome: str = None, senha: str = None, perfil: str = None, cargo_id: int = None):
         usuario = UsuarioModel.query.get(usuario_id)
         if not usuario:
             raise ValueError("Usuário não encontrado")
@@ -43,11 +47,18 @@ class UsuarioService:
         if nome:
             usuario.nome = nome
         if senha:
-            usuario.senha = hash_senha(senha) # Perfeito!
+            usuario.senha = hash_senha(senha)
         if perfil:
             usuario.perfil = perfil.upper()
+        if cargo_id is not None:
+            usuario.cargo_id = cargo_id
 
         db.session.commit()
+
+        # Gerar exames automáticos se cargo atualizado
+        if cargo_id:
+            VinculoService.gerar_exames_automaticos_por_cargo(cargo_id)
+
         return usuario
     
     @staticmethod

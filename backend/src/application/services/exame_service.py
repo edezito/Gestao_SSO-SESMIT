@@ -1,4 +1,5 @@
 from datetime import datetime
+from time import timezone
 from unittest import case
 from src.infrastructure.model.exame_model import Exame
 from src.config.database import db
@@ -33,7 +34,7 @@ class ExameService:
         
         status_expression = case(
             (Exame.data_realizacao != None, "REALIZADO"),
-            (Exame.data_agendamento < datetime.utcnow(), "VENCIDO"),
+            (Exame.data_agendamento < datetime.now(timezone.utc)(), "VENCIDO"),
             else_="PENDENTE"
         )
         
