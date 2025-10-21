@@ -1,15 +1,13 @@
 from flask import Blueprint, request, jsonify
 from src.application.services.exame_service import ExameService
 from src.infrastructure.model.usuario_model import UsuarioModel
-from flask_jwt_extended import get_jwt, jwt_required
-
-
 from src.utils.decorators import roles_required
+from flask_jwt_extended import get_jwt, jwt_required
 
 exame_bp = Blueprint("exame_bp", __name__)
 
 @exame_bp.route("/exames", methods=["POST"])
-@roles_required("COLABORADOR", "SESMIT", "GESTOR")
+@roles_required("COLABORADOR", "SESMIT", "GESTOR", self_allowed=True)
 def criar_exame():
     dados = request.json or {}
     claims = get_jwt()
@@ -20,9 +18,7 @@ def criar_exame():
     if not colaborador_id:
         return jsonify({"erro": "colaborador_id obrigatório"}), 400
 
-    if perfil == "COLABORADOR" and colaborador_id != user_id:
-        return jsonify({"erro": "Colaborador só pode agendar seus próprios exames"}), 403
-
+    # COLABORADOR só pode agendar para si mesmo (self_allowed já verifica isso)
     colaborador = UsuarioModel.query.get(colaborador_id)
     if not colaborador:
         return jsonify({"erro": "Colaborador não encontrado"}), 404
@@ -40,13 +36,14 @@ def criar_exame():
 
 
 @exame_bp.route("/exames", methods=["GET"])
-@jwt_required()
-@roles_required("COLABORADOR", "SESMIT", "GESTOR")
+@jwt_required
+@roles_required("COLABORADOR", "SESMIT", "GESTOR", self_allowed=True)
 def listar_exames():
     claims = get_jwt()
     perfil = claims.get("perfil")
     user_id = claims.get("sub")
 
+    # COLABORADOR vê só os próprios exames, SESMIT/GESTOR veem todos
     if perfil == "COLABORADOR":
         exames = ExameService.buscar_por_colaborador(user_id)
     else:
