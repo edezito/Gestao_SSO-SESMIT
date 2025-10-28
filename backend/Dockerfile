@@ -9,11 +9,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
-COPY wait-for-db.sh /app/
+COPY wait-for-db.sh /app/wait-for-db.sh
 RUN chmod +x /app/wait-for-db.sh
 
 ENV FLASK_APP=src.app:create_app
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=5000
 
-CMD ["./wait-for-db.sh", "flask", "run"]
+CMD ["/app/wait-for-db.sh", "flask", "run"]
