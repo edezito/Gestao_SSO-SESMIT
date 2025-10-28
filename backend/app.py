@@ -4,6 +4,7 @@ from flask_cors import CORS
 from src.config.database import init_db
 from src.application.controllers.usuario_controller import usuario_bp
 from src.application.controllers.exame_controller import exame_bp
+from src.application.controllers.cargo_controller import cargo_bp
 import os
 
 load_dotenv()
@@ -30,6 +31,7 @@ def create_app():
     # Registrar Blueprints
     app.register_blueprint(usuario_bp)
     app.register_blueprint(exame_bp)
+    app.register_blueprint(cargo_bp)
 
     return app
 

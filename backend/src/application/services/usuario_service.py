@@ -1,3 +1,4 @@
+import datetime
 from src.infrastructure.model.usuario_model import UsuarioModel
 from src.infrastructure.model.cargo_model import CargoModel
 from src.application.services.exame_service import ExameService
@@ -35,16 +36,29 @@ class UsuarioService:
         
         usuario.cargo_id = cargo_id
         db.session.add(usuario)
-
-        if hasattr(cargo, 'exames_exigidos'):
-            for exame_exigido in cargo.exames_exigidos:
-                ExameService.agendar_exame(
-                    colaborador_id=usuario.id,
-                    exame_id=exame_exigido.id,
-                    tipo_exame='ADMISSIONAL'
-                )
-
         db.session.commit()
+        
+        exames_obrigatorios = set(cargo.exames_exigidos)
+
+        for risco in cargo.riscos_associados:
+            for exame in risco.exames_obrigatorios:
+                exames_obrigatorios.add(exame)
+                
+        if exames_obrigatorios:
+            for exame in exames_obrigatorios:
+                try:
+                    ExameService.agendar_exame(
+                        colaborador_id=usuario.id,
+                        exame_id=exame.id,
+                        tipo_exame="ADMISSIONAL",
+                        data_agendamento=datetime.utcnow() + datetime.timedelta(days=7) # Exemplo: Agendar para daqui a 7 dias
+                    )
+                except ValueError as e:
+                    
+                    print(f"Aviso: Não foi possível agendar {exame.nome} para {usuario.nome}. {e}")
+                except Exception as e:
+                   
+                    print(f"Erro ao agendar exame automático: {e}")
         return usuario
 
     @staticmethod
@@ -76,7 +90,7 @@ class UsuarioService:
         return usuario
 
     @staticmethod
-    def desativar_usuario(usuario_id: int):
+    def inativar_usuario(usuario_id: int):
         usuario = UsuarioModel.query.get(usuario_id)
         if not usuario:
             raise ValueError("Usuário não encontrado")

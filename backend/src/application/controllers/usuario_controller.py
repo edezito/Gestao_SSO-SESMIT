@@ -4,6 +4,7 @@ from src.application.services.usuario_service import UsuarioService
 from src.infrastructure.model.usuario_model import UsuarioModel
 from src.application.services.authorization_service import AuthorizationService
 from src.domain.usuario_domain import UserDomain
+from src.utils.role_required import role_required
 
 usuario_bp = Blueprint("usuario_bp", __name__)
 
@@ -58,36 +59,20 @@ def login():
 # Listar usuários/colaboradores
 # -----------------------------
 @usuario_bp.route("/colaboradores", methods=["GET"])
-def listar_colaboradores():
-    verify_jwt_in_request()
-    usuario_id = get_jwt().get("sub")
-    usuario = UsuarioModel.query.get(usuario_id)
-    authz = AuthorizationService(usuario)
-
-    # Apenas SESMIT, GESTOR podem ver todos os colaboradores
-    if usuario.perfil not in ["SESMIT", "GESTOR"]:
-        return jsonify({
-            "erro": "Acesso restrito",
-            "mensagem": "Apenas usuários com perfil SESMIT ou GESTOR podem visualizar a lista de colaboradores.",
-            "sugestao": "Solicite acesso ao administrador do sistema."
-        }), 403
-
+@role_required(AuthorizationService.pode_administrar_usuarios)
+def listar_colaboradores(authz: AuthorizationService): # authz é injetado pelo decorator
+    # Lógica de autenticação e autorização removida
+    
     usuarios = UsuarioService.listar_usuarios()
     
-    if not usuarios:
-        return jsonify({
-            "mensagem": "Nenhum colaborador encontrado",
-            "dados": []
-        })
-    
+    # ... (restante da função)
     return jsonify([{
         "id": u.id,
         "nome": u.nome,
         "email": u.email,
         "perfil": u.perfil,
-        "cargo": u.cargo.nome if u.cargo else None,
         "ativo": u.ativo,
-        "criado_em": u.criado_em.isoformat() if u.criado_em else None
+        "cargo": u.cargo.nome if u.cargo else None
     } for u in usuarios])
 
 # -----------------------------
@@ -122,18 +107,12 @@ def buscar_colaborador(usuario_id):
 # Criar usuário (com autenticação)
 # -----------------------------
 @usuario_bp.route("/colaboradores", methods=["POST"])
-def criar_colaborador():
-    verify_jwt_in_request()
+@role_required(AuthorizationService.pode_administrar_usuarios) 
+def criar_colaborador(authz: AuthorizationService): # authz é injetado pelo decorator
     dados = request.json
-    usuario_id = get_jwt().get("sub")
-    usuario = UsuarioModel.query.get(usuario_id)
-    authz = AuthorizationService(usuario)
-
-    # Apenas SESMIT, GESTOR podem criar usuários
-    if usuario.perfil not in ["SESMIT", "GESTOR"]:
-        return jsonify({"msg": "Acesso negado"}), 403
-
+    
     try:
+        # A lógica de autenticação/autorização foi movida para o decorator
         user_domain = UserDomain(
             nome=dados["nome"],
             email=dados["email"],
@@ -142,6 +121,7 @@ def criar_colaborador():
             cargo_id=dados.get("cargo_id")
         )
         
+        # ... (restante da função)
         novo_usuario = UsuarioService.criar_usuario(user_domain)
         return jsonify({
             "id": novo_usuario.id,
@@ -187,19 +167,17 @@ def atualizar_colaborador(usuario_id):
 # Deletar usuário (inativar)
 # -----------------------------
 @usuario_bp.route("/colaboradores/<int:usuario_id>", methods=["DELETE"])
-def deletar_colaborador(usuario_id):
-    verify_jwt_in_request()
-    current_user_id = get_jwt().get("sub")
-    current_user = UsuarioModel.query.get(current_user_id)
-    authz = AuthorizationService(current_user)
+@role_required(AuthorizationService.pode_administrar_usuarios)
+def deletar_colaborador(usuario_id, authz: AuthorizationService): # authz é injetado pelo decorator
+    # Lógica de autenticação e autorização removida
 
-    # Apenas SESMIT, GESTOR podem deletar usuários
-    if current_user.perfil not in ["SESMIT", "GESTOR"]:
-        return jsonify({"msg": "Acesso negado"}), 403
-
-    sucesso = UsuarioService.deletar_usuario(usuario_id)
-    
-    if sucesso:
-        return jsonify({"msg": "Usuário inativado com sucesso"})
-    else:
+    try:
+        usuario_inativado = UsuarioService.inativar_usuario(usuario_id) 
+        return jsonify({
+            "msg": f"Usuário {usuario_inativado.nome} inativado com sucesso",
+            "ativo": usuario_inativado.ativo
+        })
+    except ValueError as e:
+        return jsonify({"erro": str(e)}), 404
+    except Exception as e:
         return jsonify({"erro": "Erro ao inativar usuário"}), 500

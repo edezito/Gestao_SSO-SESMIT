@@ -1,5 +1,3 @@
-# Arquivo: src/config/database.py (Atualizado)
-
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
@@ -22,6 +20,9 @@ def init_db(app):
         try:
             from src.infrastructure.model.usuario_model import UsuarioModel
             from src.infrastructure.model.exame_model import Exame
+            from src.infrastructure.model.cargo_model import CargoModel 
+            from src.infrastructure.model.risco_model import Risco
+            from src.infrastructure.model.sso_model import ProgramaRisco
             
             db.create_all()
             print("✅ Banco de dados inicializado e tabelas criadas com sucesso")

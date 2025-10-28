@@ -28,27 +28,21 @@ class ExameService:
     # AGENDAMENTO
     # ===============================
     @staticmethod
-    def agendar_exame(colaborador_id, exame_id, tipo_exame, data_agendamento=None, observacoes=None):
-        existente = Agendamento.query.filter_by(
-            colaborador_id=colaborador_id,
-            exame_id=exame_id,
-            tipo_exame=tipo_exame,
-            data_agendamento=data_agendamento
-        ).first()
-
-        if existente:
-            return existente
-
-        agendamento = Agendamento(
-            colaborador_id=colaborador_id,
-            exame_id=exame_id,
-            tipo_exame=tipo_exame,
-            data_agendamento=data_agendamento or datetime.utcnow(),
-            observacoes=observacoes
+    def buscar_por_status(status):
+        status = status.upper()
+        
+        # CORRIGIDO: Referenciar o modelo Agendamento e suas colunas
+        status_expression = case(
+            # Se data_realizacao for diferente de NULL
+            (Agendamento.data_realizacao != None, "REALIZADO"),
+            # Se data_realizacao for NULL E data_agendamento for anterior a data atual
+            (Agendamento.data_agendamento < datetime.utcnow(), "VENCIDO"),
+            # Caso contrário
+            else_="PENDENTE"
         )
-        db.session.add(agendamento)
-        db.session.commit()
-        return agendamento
+        
+        # CORRIGIDO: Consultar o modelo Agendamento
+        return Agendamento.query.filter(status_expression == status).all()
 
     @staticmethod
     def buscar_por_status(status):

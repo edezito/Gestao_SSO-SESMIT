@@ -4,6 +4,7 @@ from src.application.services.exame_service import ExameService
 from src.infrastructure.model.usuario_model import UsuarioModel
 from src.infrastructure.model.agendamento_model import Agendamento
 from src.application.services.authorization_service import AuthorizationService
+from src.utils.role_required import role_required
 from src.config.database import db
 
 exame_bp = Blueprint("exame_bp", __name__)
@@ -12,16 +13,12 @@ exame_bp = Blueprint("exame_bp", __name__)
 # Criar tipo de exame
 # -----------------------------
 @exame_bp.route("/tipos-exame", methods=["POST"])
-def criar_tipo_exame():
-    verify_jwt_in_request()
+# NOVO: Aplicar decorator
+@role_required(AuthorizationService.pode_administrar_usuarios) # Reutilizando a regra
+def criar_tipo_exame(authz: AuthorizationService): # authz é injetado
     dados = request.json
-    usuario_id = get_jwt().get("sub")
-    usuario = UsuarioModel.query.get(usuario_id)
-    authz = AuthorizationService(usuario)
-
-    if usuario.perfil not in ["SESMIT", "GESTOR"]:
-        return jsonify({"msg": "Acesso negado"}), 403
-
+    # Lógica de autenticação e autorização removida
+    
     exame = ExameService.criar_tipo_exame(
         nome=dados["nome"],
         descricao=dados.get("descricao")

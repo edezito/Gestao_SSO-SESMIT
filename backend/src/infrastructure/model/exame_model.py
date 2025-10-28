@@ -8,3 +8,6 @@ class Exame(db.Model):
     descricao = db.Column(db.Text)
 
     agendamentos = db.relationship("Agendamento", back_populates="exame")
+    
+    # O backref 'riscos_associados' é criado pela definição em Risco.
+    # O backref 'cargos_que_exigem' é criado pela definição em CargoModel.
