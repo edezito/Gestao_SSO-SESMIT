@@ -1,10 +1,29 @@
 #!/bin/sh
-# Espera o MySQL estar disponível
-echo "Aguardando o banco de dados em $DB_HOST:$DB_PORT..."
-until nc -z -v -w30 $DB_HOST $DB_PORT
-do
-  echo "Banco de dados indisponível, aguardando..."
-  sleep 2
+# usage: wait-for-db.sh host:port [attempts] [sleep_seconds] cmd...
+# ex: ./wait-for-db.sh db:3306 15 2 gunicorn ...
+set -e
+
+HOSTPORT=${1:?Need host:port as first arg}
+ATTEMPTS=${2:-15}
+SLEEP=${3:-2}
+shift 3
+
+HOST=${HOSTPORT%:*}
+PORT=${HOSTPORT##*:}
+
+echo "Aguardando o banco de dados em $HOST:$PORT..."
+
+i=0
+while ! nc -z "$HOST" "$PORT"; do
+  i=$((i+1))
+  if [ "$i" -ge "$ATTEMPTS" ]; then
+    echo "DB não disponível após $ATTEMPTS tentativas, abortando."
+    exit 1
+  fi
+  echo "Banco de dados indisponível, aguardando... ($i/$ATTEMPTS)"
+  sleep "$SLEEP"
 done
-echo "Banco de dados disponível!"
+
+echo "Connection to $HOST:$PORT succeeded!"
+# execute o comando passado
 exec "$@"

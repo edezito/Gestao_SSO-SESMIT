@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, current_user
 from src.application.services.risco_service import RiscoService
 from src.application.services.authorization_service import AuthorizationService
 from src.utils.role_required import role_required
@@ -16,31 +17,41 @@ def serialize_risco(risco):
     }
 
 # -----------------------------
-# CRUD de Riscos
+# CRUD de Riscos - CORRIGIDO
 # -----------------------------
 
 @risco_bp.route("/", methods=["POST"])
-# Reutilizar a permissão de SESMIT (pode_crud_cargos), mas idealmente seria 'pode_crud_sso'
-@role_required(AuthorizationService.pode_crud_cargos) 
-def criar_risco(authz: AuthorizationService):
+@jwt_required()
+@role_required(lambda authz: authz.pode_crud_cargos())  # ✅ CORREÇÃO: usar lambda
+def criar_risco():
     dados = request.json
     try:
+        if not dados.get("nome"):
+            return jsonify({"erro": "Nome do risco é obrigatório"}), 400
+            
         risco = RiscoService.criar_risco(dados["nome"], dados.get("descricao"))
         return jsonify(serialize_risco(risco)), 201
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
     except Exception as e:
-        return jsonify({"erro": "Erro ao criar risco"}), 500
+        print(f"Erro ao criar risco: {str(e)}")
+        return jsonify({"erro": "Erro interno ao criar risco"}), 500
 
 @risco_bp.route("/", methods=["GET"])
-@role_required(AuthorizationService.pode_crud_cargos)
-def listar_riscos(authz: AuthorizationService):
-    riscos = RiscoService.listar_riscos()
-    return jsonify([serialize_risco(r) for r in riscos])
+@jwt_required()
+@role_required(lambda authz: authz.pode_crud_cargos())  # ✅ CORREÇÃO: usar lambda
+def listar_riscos():
+    try:
+        riscos = RiscoService.listar_riscos()
+        return jsonify([serialize_risco(r) for r in riscos])
+    except Exception as e:
+        print(f"Erro ao listar riscos: {str(e)}")
+        return jsonify({"erro": "Erro interno ao listar riscos"}), 500
 
 @risco_bp.route("/<int:risco_id>", methods=["PUT"])
-@role_required(AuthorizationService.pode_crud_cargos)
-def atualizar_risco(risco_id, authz: AuthorizationService):
+@jwt_required()
+@role_required(lambda authz: authz.pode_crud_cargos())  # ✅ CORREÇÃO: usar lambda
+def atualizar_risco(risco_id):
     dados = request.json
     try:
         risco = RiscoService.atualizar_risco(
@@ -53,11 +64,13 @@ def atualizar_risco(risco_id, authz: AuthorizationService):
     except ValueError as e:
         return jsonify({"erro": str(e)}), 404
     except Exception as e:
-        return jsonify({"erro": "Erro ao atualizar risco"}), 500
+        print(f"Erro ao atualizar risco: {str(e)}")
+        return jsonify({"erro": "Erro interno ao atualizar risco"}), 500
 
 @risco_bp.route("/<int:risco_id>", methods=["DELETE"])
-@role_required(AuthorizationService.pode_crud_cargos)
-def deletar_risco(risco_id, authz: AuthorizationService):
+@jwt_required()
+@role_required(lambda authz: authz.pode_crud_cargos())  # ✅ CORREÇÃO: usar lambda
+def deletar_risco(risco_id):
     """Deleta o risco (deleção lógica/inativação)."""
     try:
         risco_inativado = RiscoService.deletar_risco(risco_id)
@@ -68,15 +81,17 @@ def deletar_risco(risco_id, authz: AuthorizationService):
     except ValueError as e:
         return jsonify({"erro": str(e)}), 404
     except Exception as e:
-        return jsonify({"erro": "Erro ao inativar risco"}), 500
+        print(f"Erro ao deletar risco: {str(e)}")
+        return jsonify({"erro": "Erro interno ao inativar risco"}), 500
 
 # -----------------------------
 # Vínculo Risco -> Exame Obrigatório
 # -----------------------------
 
 @risco_bp.route("/<int:risco_id>/exames", methods=["POST"])
-@role_required(AuthorizationService.pode_crud_cargos)
-def vincular_exames_ao_risco(risco_id, authz: AuthorizationService):
+@jwt_required()
+@role_required(lambda authz: authz.pode_crud_cargos())  # ✅ CORREÇÃO: usar lambda
+def vincular_exames_ao_risco(risco_id):
     exame_ids = request.json.get("exame_ids", [])
     if not isinstance(exame_ids, list):
         return jsonify({"erro": "O campo 'exame_ids' deve ser uma lista de IDs."}), 400
@@ -90,4 +105,5 @@ def vincular_exames_ao_risco(risco_id, authz: AuthorizationService):
     except ValueError as e:
         return jsonify({"erro": str(e)}), 404
     except Exception as e:
-        return jsonify({"erro": "Erro ao vincular exames ao risco"}), 500
+        print(f"Erro ao vincular exames: {str(e)}")
+        return jsonify({"erro": "Erro interno ao vincular exames ao risco"}), 500

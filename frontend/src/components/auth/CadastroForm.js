@@ -2,7 +2,7 @@ import { useState } from "react";
 import { cadastroUsuario } from "../../services/api";
 import formStyles from '../../styles/Form.module.css';
 
-export default function CadastroForm() { 
+export default function CadastroForm() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -11,16 +11,20 @@ export default function CadastroForm() {
 
   const handleCadastro = async (e) => {
     e.preventDefault();
-    setMsg(""); 
+    setMsg("");
     try {
       const res = await cadastroUsuario({ nome, email, senha, perfil });
       if (res.id) {
         setMsg("Usuário cadastrado com sucesso!");
       } else {
+        // Isso provavelmente nunca será executado
         setMsg(res.erro || "Ocorreu um erro desconhecido.");
       }
     } catch (error) {
-      setMsg("Falha na comunicação com o servidor.");
+      // ----- ESTA É A CORREÇÃO -----
+      // Usar a mensagem do erro que veio da api.js
+      setMsg(error.message);
+      // -----------------------------
     }
   };
 
@@ -39,6 +43,7 @@ export default function CadastroForm() {
       )}
 
       <form onSubmit={handleCadastro} className={formStyles.form}>
+        {/* ... (o restante do seu formulário não precisa mudar) ... */}
         <input
           className={formStyles.input}
           placeholder="Nome"

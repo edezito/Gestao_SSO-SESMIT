@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import get_jwt, verify_jwt_in_request
+from flask_jwt_extended import jwt_required, current_user
 from src.application.services.usuario_service import UsuarioService
 from src.infrastructure.model.usuario_model import UsuarioModel
 from src.application.services.authorization_service import AuthorizationService
@@ -14,7 +14,6 @@ usuario_bp = Blueprint("usuario_bp", __name__)
 @usuario_bp.route("/cadastro", methods=["POST"])
 def cadastrar_usuario():
     dados = request.json
-    
     try:
         user_domain = UserDomain(
             nome=dados["nome"],
@@ -23,7 +22,6 @@ def cadastrar_usuario():
             perfil=dados.get("perfil", "COLABORADOR"),
             cargo_id=dados.get("cargo_id")
         )
-        
         novo_usuario = UsuarioService.criar_usuario(user_domain)
         return jsonify({
             "id": novo_usuario.id,
@@ -41,16 +39,13 @@ def cadastrar_usuario():
 @usuario_bp.route("/login", methods=["POST"])
 def login():
     dados = request.json
-    
     try:
         token = UsuarioService.autenticar(
             email=dados["email"],
             senha=dados["senha"]
         )
-        
         if not token:
             return jsonify({"erro": "Credenciais inválidas"}), 401
-            
         return jsonify({"token": token})
     except Exception as e:
         return jsonify({"erro": str(e)}), 400
@@ -59,13 +54,10 @@ def login():
 # Listar usuários/colaboradores
 # -----------------------------
 @usuario_bp.route("/colaboradores", methods=["GET"])
-@role_required(AuthorizationService.pode_administrar_usuarios)
-def listar_colaboradores(authz: AuthorizationService): # authz é injetado pelo decorator
-    # Lógica de autenticação e autorização removida
-    
+@jwt_required() 
+@role_required(lambda authz: authz.pode_administrar_usuarios())
+def listar_colaboradores():  # ✅ Remove authz parameter
     usuarios = UsuarioService.listar_usuarios()
-    
-    # ... (restante da função)
     return jsonify([{
         "id": u.id,
         "nome": u.nome,
@@ -79,16 +71,9 @@ def listar_colaboradores(authz: AuthorizationService): # authz é injetado pelo 
 # Buscar usuário por ID
 # -----------------------------
 @usuario_bp.route("/colaboradores/<int:usuario_id>", methods=["GET"])
+@jwt_required() 
+@role_required(lambda authz: authz.pode_visualizar_usuario(usuario_id))  # ✅ Nova permissão
 def buscar_colaborador(usuario_id):
-    verify_jwt_in_request()
-    current_user_id = get_jwt().get("sub")
-    current_user = UsuarioModel.query.get(current_user_id)
-    authz = AuthorizationService(current_user)
-
-    # COLABORADOR só pode ver seu próprio perfil
-    if current_user.perfil == "COLABORADOR" and current_user.id != usuario_id:
-        return jsonify({"msg": "Acesso negado"}), 403
-
     usuario = UsuarioService.buscar_usuario_por_id(usuario_id)
     if not usuario:
         return jsonify({"erro": "Usuário não encontrado"}), 404
@@ -107,12 +92,11 @@ def buscar_colaborador(usuario_id):
 # Criar usuário (com autenticação)
 # -----------------------------
 @usuario_bp.route("/colaboradores", methods=["POST"])
-@role_required(AuthorizationService.pode_administrar_usuarios) 
-def criar_colaborador(authz: AuthorizationService): # authz é injetado pelo decorator
+@jwt_required() 
+@role_required(lambda authz: authz.pode_administrar_usuarios())
+def criar_colaborador():  # ✅ Remove authz parameter
     dados = request.json
-    
     try:
-        # A lógica de autenticação/autorização foi movida para o decorator
         user_domain = UserDomain(
             nome=dados["nome"],
             email=dados["email"],
@@ -120,8 +104,6 @@ def criar_colaborador(authz: AuthorizationService): # authz é injetado pelo dec
             perfil=dados.get("perfil", "COLABORADOR"),
             cargo_id=dados.get("cargo_id")
         )
-        
-        # ... (restante da função)
         novo_usuario = UsuarioService.criar_usuario(user_domain)
         return jsonify({
             "id": novo_usuario.id,
@@ -137,17 +119,10 @@ def criar_colaborador(authz: AuthorizationService): # authz é injetado pelo dec
 # Atualizar usuário
 # -----------------------------
 @usuario_bp.route("/colaboradores/<int:usuario_id>", methods=["PUT"])
+@jwt_required() 
+@role_required(lambda authz: authz.pode_administrar_usuarios() or authz.usuario.id == usuario_id)
 def atualizar_colaborador(usuario_id):
-    verify_jwt_in_request()
     dados = request.json
-    current_user_id = get_jwt().get("sub")
-    current_user = UsuarioModel.query.get(current_user_id)
-    authz = AuthorizationService(current_user)
-
-    # COLABORADOR só pode atualizar seu próprio perfil
-    if current_user.perfil == "COLABORADOR" and current_user.id != usuario_id:
-        return jsonify({"msg": "Acesso negado"}), 403
-
     try:
         usuario_atualizado = UsuarioService.atualizar_usuario(
             usuario_id=usuario_id,
@@ -167,10 +142,9 @@ def atualizar_colaborador(usuario_id):
 # Deletar usuário (inativar)
 # -----------------------------
 @usuario_bp.route("/colaboradores/<int:usuario_id>", methods=["DELETE"])
-@role_required(AuthorizationService.pode_administrar_usuarios)
-def deletar_colaborador(usuario_id, authz: AuthorizationService): # authz é injetado pelo decorator
-    # Lógica de autenticação e autorização removida
-
+@jwt_required() 
+@role_required(lambda authz: authz.pode_administrar_usuarios())
+def deletar_colaborador(usuario_id):  # ✅ Remove authz parameter
     try:
         usuario_inativado = UsuarioService.inativar_usuario(usuario_id) 
         return jsonify({

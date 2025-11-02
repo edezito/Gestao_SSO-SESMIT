@@ -1,39 +1,75 @@
-import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
 import AuthPage from './pages/AuthPage/AuthPage';
 import DashboardPage from './pages/DashboardPage/DashboardPage';
+import ExamesPage from './pages/ExamesPage/ExamesPage';
+import ColaboradoresPage from './pages/ColaboradoresPage/ColaboradoresPage';
+import RiscosPage from './pages/RiscosPage/RiscosPage';
+import CargoRiscoPage from './pages/CargoRiscoPage/CargoRiscoPage'; // ✅ NOVA PÁGINA
+import { Loading } from './components/ui/Loading';
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem("authToken"));
+  const { isAuthenticated, loading } = useAuth();
 
-  const handleSetToken = (newToken) => {
-    if (newToken) {
-      localStorage.setItem("authToken", newToken);
-    } else {
-      localStorage.removeItem("authToken");
-    }
-    setToken(newToken);
-  };
+  if (loading) {
+    return <Loading message="Carregando..." />;
+  }
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Rota de Autenticação */}
+        {/* Rota de Autenticação (Login + Cadastro) */}
         <Route 
           path="/auth" 
-          element={!token ? <AuthPage setToken={handleSetToken} /> : <Navigate to="/dashboard" />}
+          element={!isAuthenticated ? <AuthPage /> : <Navigate to="/dashboard" replace />}
         />
 
         {/* Rota do Dashboard (Protegida) */}
         <Route 
           path="/dashboard" 
-          element={token ? <DashboardPage token={token} onLogout={() => handleSetToken(null)} /> : <Navigate to="/auth" />}
+          element={isAuthenticated ? <DashboardPage /> : <Navigate to="/auth" replace />}
         />
 
-        {/* Rota Padrão: redireciona para o local correto */}
+        {/* Rota: Gestão de Exames (Protegida) */}
+        <Route 
+          path="/exames" 
+          element={isAuthenticated ? <ExamesPage /> : <Navigate to="/auth" replace />}
+        />
+
+        {/* Rota: Gestão de Colaboradores (Protegida) */}
+        <Route 
+          path="/colaboradores" 
+          element={isAuthenticated ? <ColaboradoresPage /> : <Navigate to="/auth" replace />}
+        />
+
+        {/* Rota: Gestão de Riscos (Protegida) */}
+        <Route 
+          path="/riscos" 
+          element={isAuthenticated ? <RiscosPage /> : <Navigate to="/auth" replace />}
+        />
+
+        {/* ✅ NOVA ROTA: Vínculos Cargo×Risco (Protegida - apenas SESMIT) */}
+        <Route 
+          path="/vinculos" 
+          element={isAuthenticated ? <CargoRiscoPage /> : <Navigate to="/auth" replace />}
+        />
+
+        {/* Rota de Login (redireciona para auth) */}
+        <Route 
+          path="/login" 
+          element={<Navigate to="/auth" replace />}
+        />
+
+        {/* Rota Padrão */}
+        <Route 
+          path="/" 
+          element={<Navigate to={isAuthenticated ? "/dashboard" : "/auth"} replace />} 
+        />
+
+        {/* Rota de fallback */}
         <Route 
           path="*" 
-          element={<Navigate to={token ? "/dashboard" : "/auth"} />} 
+          element={<Navigate to="/" replace />} 
         />
       </Routes>
     </BrowserRouter>

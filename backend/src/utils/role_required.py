@@ -1,22 +1,31 @@
 from functools import wraps
-from flask_jwt_extended import verify_jwt_in_request, get_jwt
+from flask_jwt_extended import current_user
 from flask import jsonify
-from src.application.services.authorization_service import AuthorizationService
-from src.infrastructure.model.usuario_model import UsuarioModel
 
 def role_required(check_function):
-    def wrapper(fn):
-        @wraps(fn)
-        def decorated(*args, **kwargs):
-            verify_jwt_in_request()
-            claims = get_jwt()
-            usuario_id = claims.get("sub")
-            usuario = UsuarioModel.query.get(usuario_id)
+    """
+    Decorator para verificar permissões baseadas em roles.
+    Uso: @role_required(lambda authz: authz.pode_administrar_usuarios())
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # Verifica se o usuário está autenticado e carregado
+            if not current_user:
+                return jsonify({"msg": "Usuário não autenticado ou token inválido"}), 401
 
-            authz = AuthorizationService(usuario)
+            # Cria serviço de autorização
+            from src.application.services.authorization_service import AuthorizationService
+            authz = AuthorizationService(current_user)
+
+            # Verifica a permissão
             if not check_function(authz):
-                return jsonify({"msg": "Acesso negado"}), 403
+                return jsonify({
+                    "msg": "Acesso negado. Permissão insuficiente.",
+                    "perfil_requerido": check_function.__name__ if hasattr(check_function, '__name__') else "específica"
+                }), 403
 
-            return fn(*args, **kwargs)
-        return decorated
-    return wrapper
+            # Chama a função original
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
