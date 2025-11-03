@@ -67,3 +67,27 @@ class AuthorizationService:
         if self._tem_perfil("SESMIT", "GESTOR"):
             return True
         return self._tem_perfil("COLABORADOR") and self.usuario.id == usuario_id
+    
+
+    # ===============================
+    # Permissões específicas para CAT
+    # ===============================
+    def pode_criar_cat(self):
+        """Apenas SESMIT e GESTOR podem registrar CAT"""
+        return self._tem_perfil("SESMIT", "GESTOR")
+
+    def pode_listar_cat(self):
+        """SESMIT, GESTOR e CIPA podem visualizar CATs"""
+        return self._tem_perfil("SESMIT", "GESTOR", "CIPA")
+
+    def pode_editar_cat(self):
+        """Somente SESMIT e GESTOR podem editar CAT"""
+        return self._tem_perfil("SESMIT", "GESTOR")
+
+    def pode_deletar_cat(self):
+        """Apenas SESMIT pode deletar CAT"""
+        return self._tem_perfil("SESMIT")
+
+    def pode_gerar_pdf_cat(self):
+        """Todos os perfis autenticados podem gerar PDF da própria CAT"""
+        return bool(self.usuario)

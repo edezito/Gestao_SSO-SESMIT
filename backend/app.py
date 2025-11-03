@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from src.config.database import init_db
+from src.application.controllers.cat_controller import cat_bp
 from src.application.controllers.usuario_controller import usuario_bp
 from src.application.controllers.exame_controller import exame_bp
 from src.application.controllers.cargo_controller import cargo_bp
@@ -80,7 +81,8 @@ def create_app():
         (exame_bp, "/api/exames"),
         (cargo_bp, "/api/cargos"),
         (risco_bp, "/api/riscos"),
-        (dashboard_bp, "/api/dashboard")
+        (dashboard_bp, "/api/dashboard"),
+        (cat_bp, "/api/cats"),
 
     ]
 

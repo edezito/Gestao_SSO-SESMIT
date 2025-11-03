@@ -24,6 +24,7 @@ def init_db(app):
             from src.infrastructure.model.risco_model import Risco
             from src.infrastructure.model.sso_model import ProgramaRisco
             
+            
             db.create_all()
             print("✅ Banco de dados inicializado e tabelas criadas com sucesso")
         except Exception as e:

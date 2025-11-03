@@ -7,3 +7,4 @@ PyMySQL==1.1.0
 python-dotenv==1.0.0
 cryptography
 Flask-Cors==3.0.10
+reportlab==3.6.12
