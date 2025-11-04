@@ -1,254 +1,194 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, current_user
 from src.application.services.exame_service import ExameService
-from src.infrastructure.model.agendamento_model import Agendamento
 from src.application.services.authorization_service import AuthorizationService
-from src.utils.role_required import role_required
-from src.config.database import db
 
-exame_bp = Blueprint("exame_bp", __name__)
+exame_bp = Blueprint('exame', __name__)
 
-# -----------------------------
-# Criar tipo de exame
-# -----------------------------
-@exame_bp.route("/tipos-exame", methods=["POST"])
-@jwt_required() 
-@role_required(lambda authz: authz.pode_administrar_usuarios())
-def criar_tipo_exame():
+@exame_bp.route('/agendamentos', methods=['GET'])
+@jwt_required()
+def listar_agendamentos():
+    """
+    Lista agendamentos de exames
+    - Gestor/SESMIT: veem todos os agendamentos
+    - Colaborador: veem apenas seus agendamentos
+    """
     try:
-        dados = request.json
+        print("🔍 [DEBUG] Iniciando listar_agendamentos")
+        print(f"🔍 [DEBUG] Usuário atual: {current_user.id} - {current_user.perfil}")
         
-        if not dados or not dados.get("nome"):
-            return jsonify({"erro": "Nome do exame é obrigatório"}), 400
+        # CORREÇÃO: Usar a estrutura correta do AuthorizationService
+        auth_service = AuthorizationService(current_user)
+        is_gestor_or_sesmit = current_user.perfil.upper() in ['GESTOR', 'SESMIT']
         
-        exame = ExameService.criar_tipo_exame(
-            nome=dados["nome"],
-            descricao=dados.get("descricao")
-        )
+        if is_gestor_or_sesmit:
+            print("🔍 [DEBUG] Usuário é Gestor/SESMIT - buscando todos agendamentos")
+            agendamentos = ExameService.listar_todos_agendamentos()
+        else:
+            print(f"🔍 [DEBUG] Usuário é Colaborador - buscando agendamentos do usuário {current_user.id}")
+            agendamentos = ExameService.buscar_agendamentos_por_colaborador(current_user.id)
         
-        return jsonify({
-            "id": exame.id, 
-            "nome": exame.nome,
-            "descricao": exame.descricao,
-            "mensagem": "Tipo de exame criado com sucesso"
-        }), 201
+        print(f"🔍 [DEBUG] Total de agendamentos encontrados: {len(agendamentos)}")
+        
+        # Formata a resposta COM TRATAMENTO SEGURO
+        agendamentos_data = []
+        for i, agendamento in enumerate(agendamentos):
+            try:
+                print(f"🔍 [DEBUG] Processando agendamento {i+1}: ID {agendamento.id}")
+                
+                # Tratamento seguro para evitar erros de relacionamento
+                colaborador_nome = 'N/A'
+                exame_nome = 'N/A'
+                
+                # Verifica se o relacionamento colaborador existe e funciona
+                if hasattr(agendamento, 'colaborador') and agendamento.colaborador:
+                    colaborador_nome = agendamento.colaborador.nome
+                    print(f"🔍 [DEBUG] Agendamento {agendamento.id} - Colaborador: {colaborador_nome}")
+                else:
+                    print(f"🔍 [DEBUG] Agendamento {agendamento.id} - Colaborador não encontrado ou relacionamento quebrado")
+                
+                # Verifica se o relacionamento exame existe e funciona
+                if hasattr(agendamento, 'exame') and agendamento.exame:
+                    exame_nome = agendamento.exame.nome
+                    print(f"🔍 [DEBUG] Agendamento {agendamento.id} - Exame: {exame_nome}")
+                else:
+                    print(f"🔍 [DEBUG] Agendamento {agendamento.id} - Exame não encontrado ou relacionamento quebrado")
+                
+                agendamento_data = {
+                    'id': agendamento.id,
+                    'colaborador_id': agendamento.colaborador_id,
+                    'colaborador_nome': colaborador_nome,
+                    'exame_id': agendamento.exame_id,
+                    'exame_nome': exame_nome,
+                    'tipo_exame': agendamento.tipo_exame,
+                    'data_agendamento': agendamento.data_agendamento.isoformat() if agendamento.data_agendamento else None,
+                    'data_realizacao': agendamento.data_realizacao.isoformat() if agendamento.data_realizacao else None,
+                    'observacoes': agendamento.observacoes,
+                    'status': agendamento.status
+                }
+                agendamentos_data.append(agendamento_data)
+                print(f"🔍 [DEBUG] Agendamento {agendamento.id} processado com sucesso")
+                
+            except Exception as inner_e:
+                print(f"❌ [DEBUG] Erro processando agendamento {agendamento.id}: {str(inner_e)}")
+                import traceback
+                traceback.print_exc()
+                
+                # Dados mínimos em caso de erro
+                agendamento_data = {
+                    'id': agendamento.id,
+                    'colaborador_id': agendamento.colaborador_id,
+                    'colaborador_nome': 'Erro ao carregar',
+                    'exame_id': agendamento.exame_id,
+                    'exame_nome': 'Erro ao carregar',
+                    'tipo_exame': agendamento.tipo_exame,
+                    'data_agendamento': agendamento.data_agendamento.isoformat() if agendamento.data_agendamento else None,
+                    'status': agendamento.status
+                }
+                agendamentos_data.append(agendamento_data)
+        
+        print(f"🔍 [DEBUG] Retornando {len(agendamentos_data)} agendamentos processados")
+        return jsonify(agendamentos_data), 200
         
     except Exception as e:
-        print(f"Erro ao criar tipo de exame: {str(e)}")
-        return jsonify({"erro": "Erro interno ao criar tipo de exame"}), 500
+        print(f"❌ [DEBUG] Erro geral em listar_agendamentos: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'erro': f'Erro ao buscar agendamentos: {str(e)}'}), 500
 
-# -----------------------------
-# Listar tipos de exame
-# -----------------------------
-@exame_bp.route("/tipos-exame", methods=["GET"])
-@jwt_required() 
+@exame_bp.route('/tipos-exame', methods=['GET'])
+@jwt_required()
 def listar_tipos_exame():
+    """Lista todos os tipos de exame disponíveis"""
     try:
-        exames = ExameService.listar_tipos_exame()
-        return jsonify([{
-            "id": e.id, 
-            "nome": e.nome, 
-            "descricao": e.descricao
-        } for e in exames])
+        tipos_exame = ExameService.listar_tipos_exame()
+        
+        tipos_data = []
+        for tipo in tipos_exame:
+            tipo_data = {
+                'id': tipo.id,
+                'nome': tipo.nome,
+                'descricao': tipo.descricao,
+                'periodicidade_meses': tipo.periodicidade_meses,
+                'valor_padrao': float(tipo.valor_padrao) if tipo.valor_padrao else None
+            }
+            tipos_data.append(tipo_data)
+        
+        return jsonify(tipos_data), 200
         
     except Exception as e:
-        print(f"Erro ao listar tipos de exame: {str(e)}")
-        return jsonify({"erro": "Erro interno ao listar tipos de exame"}), 500
+        return jsonify({'erro': f'Erro ao buscar tipos de exame: {str(e)}'}), 500
 
-# -----------------------------
-# Agendar exame - VERSÃO CORRIGIDA (ÚNICA)
-# -----------------------------
-@exame_bp.route("/agendamentos", methods=["POST"])
-@jwt_required() 
-@role_required(lambda authz: authz.pode_criar_exame(request.json.get("colaborador_id") if request.json else None))
+@exame_bp.route('/agendamentos', methods=['POST'])
+@jwt_required()
 def agendar_exame():
+    """Agenda um novo exame"""
     try:
-        dados = request.json
+        # CORREÇÃO: Verificar permissão usando a estrutura correta
+        auth_service = AuthorizationService(current_user)
+        if not auth_service.pode_criar_exame():
+            return jsonify({'erro': 'Acesso negado. Apenas gestores e SESMIT podem agendar exames.'}), 403
         
-        # Validação de dados obrigatórios
-        if not dados:
-            return jsonify({"erro": "Dados não fornecidos"}), 400
+        dados = request.get_json()
         
-        campos_obrigatorios = ["colaborador_id", "exame_id", "tipo_exame"]
-        for campo in campos_obrigatorios:
-            if campo not in dados:
-                return jsonify({"erro": f"Campo obrigatório faltando: {campo}"}), 400
+        required_fields = ['colaborador_id', 'exame_id', 'tipo_exame']
+        for field in required_fields:
+            if field not in dados:
+                return jsonify({'erro': f'Campo obrigatório faltando: {field}'}), 400
         
         agendamento = ExameService.agendar_exame(
-            colaborador_id=dados["colaborador_id"],
-            exame_id=dados["exame_id"],
-            tipo_exame=dados["tipo_exame"],
-            data_agendamento=dados.get("data_agendamento"),
-            observacoes=dados.get("observacoes")
+            colaborador_id=dados['colaborador_id'],
+            exame_id=dados['exame_id'],
+            tipo_exame=dados['tipo_exame'],
+            data_agendamento=dados.get('data_agendamento'),
+            observacoes=dados.get('observacoes')
         )
         
         return jsonify({
-            "id": agendamento.id,
-            "colaborador_id": agendamento.colaborador_id,
-            "exame_id": agendamento.exame_id,
-            "tipo_exame": agendamento.tipo_exame,
-            "data_agendamento": agendamento.data_agendamento.isoformat() if agendamento.data_agendamento else None,
-            "status": agendamento.status,
-            "mensagem": "Exame agendado com sucesso"
+            'mensagem': 'Exame agendado com sucesso',
+            'agendamento': {
+                'id': agendamento.id,
+                'colaborador_id': agendamento.colaborador_id,
+                'exame_id': agendamento.exame_id,
+                'tipo_exame': agendamento.tipo_exame,
+                'data_agendamento': agendamento.data_agendamento.isoformat() if agendamento.data_agendamento else None,
+                'status': agendamento.status
+            }
         }), 201
         
     except ValueError as e:
-        return jsonify({"erro": str(e)}), 400
+        return jsonify({'erro': str(e)}), 400
     except Exception as e:
-        print(f"Erro interno ao agendar exame: {str(e)}")
-        return jsonify({"erro": "Erro interno do servidor ao agendar exame"}), 500
+        return jsonify({'erro': f'Erro ao agendar exame: {str(e)}'}), 500
 
-# -----------------------------
-# Listar agendamentos
-# -----------------------------
-@exame_bp.route("/agendamentos", methods=["GET"])
+@exame_bp.route('/tipos-exame', methods=['POST'])
 @jwt_required()
-@role_required(lambda authz: authz.pode_listar_exames())
-def listar_agendamentos():
+def criar_tipo_exame():
+    """Cria um novo tipo de exame"""
     try:
-        limit = request.args.get("limit", default=0, type=int)
-        page = request.args.get("page", default=1, type=int)
+        # CORREÇÃO: Verificar permissão usando a estrutura correta
+        auth_service = AuthorizationService(current_user)
+        if not auth_service.pode_criar_exame():  # Usa a mesma permissão de criar exames
+            return jsonify({'erro': 'Acesso negado. Apenas gestores e SESMIT podem criar tipos de exame.'}), 403
         
-        query = Agendamento.query.options(
-            db.joinedload(Agendamento.colaborador),
-            db.joinedload(Agendamento.exame)
+        dados = request.get_json()
+        
+        if 'nome' not in dados:
+            return jsonify({'erro': 'Campo obrigatório faltando: nome'}), 400
+        
+        tipo_exame = ExameService.criar_tipo_exame(
+            nome=dados['nome'],
+            descricao=dados.get('descricao')
         )
-
-        if current_user.perfil.upper() == "COLABORADOR":
-            query = query.filter_by(colaborador_id=current_user.id)
-
-        query = query.order_by(Agendamento.data_agendamento.desc())
-
-        # Aplicar paginação se limit for especificado
-        if limit > 0:
-            query = query.limit(limit)
-
-        agendamentos = query.all()
-
-        if not agendamentos:
-            mensagem = "Nenhum exame agendado" if current_user.perfil.upper() == "COLABORADOR" else "Nenhum agendamento encontrado"
-            sugestao = "Solicite o agendamento ao SESMIT ou gestor." if current_user.perfil.upper() == "COLABORADOR" else None
-            return jsonify({
-                "mensagem": mensagem,
-                "sugestao": sugestao,
-                "dados": [],
-                "total": 0,
-                "limit": limit
-            })
-
-        # Retornar estrutura consistente
+        
         return jsonify({
-            "dados": [{
-                "id": a.id,
-                "colaborador_id": a.colaborador_id,
-                "colaborador_nome": a.colaborador.nome if a.colaborador else "N/A",
-                "exame_id": a.exame_id,
-                "exame_nome": a.exame.nome if a.exame else "N/A",
-                "tipo_exame": a.tipo_exame,
-                "data_agendamento": a.data_agendamento.isoformat() if a.data_agendamento else None,
-                "data_realizacao": a.data_realizacao.isoformat() if a.data_realizacao else None,
-                "observacoes": a.observacoes,
-                "status": a.status
-            } for a in agendamentos],
-            "total": len(agendamentos),
-            "limit": limit,
-            "pagina": page
-        })
+            'mensagem': 'Tipo de exame criado com sucesso',
+            'tipo_exame': {
+                'id': tipo_exame.id,
+                'nome': tipo_exame.nome,
+                'descricao': tipo_exame.descricao
+            }
+        }), 201
         
     except Exception as e:
-        print(f"Erro ao listar agendamentos: {str(e)}")
-        return jsonify({
-            "erro": "Erro interno ao listar agendamentos",
-            "detalhes": str(e)
-        }), 500
-
-# -----------------------------
-# Buscar agendamento por ID
-# -----------------------------
-@exame_bp.route("/agendamentos/<int:agendamento_id>", methods=["GET"])
-@jwt_required() 
-@role_required(lambda authz: authz.pode_administrar_agendamento(agendamento_id=agendamento_id))
-def buscar_agendamento(agendamento_id):
-    try:
-        agendamento = Agendamento.query.options(
-            db.joinedload(Agendamento.colaborador),
-            db.joinedload(Agendamento.exame)
-        ).get(agendamento_id)
-        
-        if not agendamento:
-            return jsonify({"erro": "Agendamento não encontrado"}), 404
-
-        return jsonify({
-            "id": agendamento.id,
-            "colaborador_id": agendamento.colaborador_id,
-            "colaborador_nome": agendamento.colaborador.nome if agendamento.colaborador else "N/A",
-            "exame_id": agendamento.exame_id,
-            "exame_nome": agendamento.exame.nome if agendamento.exame else "N/A",
-            "tipo_exame": agendamento.tipo_exame,
-            "data_agendamento": agendamento.data_agendamento.isoformat() if agendamento.data_agendamento else None,
-            "data_realizacao": agendamento.data_realizacao.isoformat() if agendamento.data_realizacao else None,
-            "observacoes": agendamento.observacoes,
-            "status": agendamento.status
-        })
-        
-    except Exception as e:
-        print(f"Erro ao buscar agendamento: {str(e)}")
-        return jsonify({"erro": "Erro interno ao buscar agendamento"}), 500
-
-# -----------------------------
-# Atualizar agendamento
-# -----------------------------
-@exame_bp.route("/agendamentos/<int:agendamento_id>", methods=["PUT"])
-@jwt_required() 
-@role_required(lambda authz: authz.pode_administrar_agendamento(agendamento_id=agendamento_id))
-def atualizar_agendamento(agendamento_id):
-    try:
-        dados = request.json
-        
-        if not dados:
-            return jsonify({"erro": "Dados não fornecidos"}), 400
-        
-        agendamento_atualizado = ExameService.atualizar_agendamento(
-            agendamento_id=agendamento_id,
-            data_agendamento=dados.get("data_agendamento"),
-            data_realizacao=dados.get("data_realizacao"),
-            observacoes=dados.get("observacoes")
-        )
-
-        if not agendamento_atualizado:
-            return jsonify({"erro": "Agendamento não encontrado"}), 404
-
-        return jsonify({
-            "id": agendamento_atualizado.id,
-            "colaborador_id": agendamento_atualizado.colaborador_id,
-            "exame_id": agendamento_atualizado.exame_id,
-            "tipo_exame": agendamento_atualizado.tipo_exame,
-            "data_agendamento": agendamento_atualizado.data_agendamento.isoformat() if agendamento_atualizado.data_agendamento else None,
-            "data_realizacao": agendamento_atualizado.data_realizacao.isoformat() if agendamento_atualizado.data_realizacao else None,
-            "observacoes": agendamento_atualizado.observacoes,
-            "status": agendamento_atualizado.status,
-            "mensagem": "Agendamento atualizado com sucesso"
-        })
-        
-    except Exception as e:
-        print(f"Erro ao atualizar agendamento: {str(e)}")
-        return jsonify({"erro": "Erro interno ao atualizar agendamento"}), 500
-
-# -----------------------------
-# Deletar agendamento
-# -----------------------------
-@exame_bp.route("/agendamentos/<int:agendamento_id>", methods=["DELETE"])
-@jwt_required() 
-@role_required(lambda authz: authz.pode_administrar_agendamento(agendamento_id=agendamento_id))
-def deletar_agendamento(agendamento_id):
-    try:
-        sucesso = ExameService.deletar_agendamento(agendamento_id)
-        
-        if sucesso:
-            return jsonify({"mensagem": "Agendamento deletado com sucesso"})
-        else:
-            return jsonify({"erro": "Agendamento não encontrado"}), 404
-            
-    except Exception as e:
-        print(f"Erro ao deletar agendamento: {str(e)}")
-        return jsonify({"erro": "Erro interno ao deletar agendamento"}), 500
+        return jsonify({'erro': f'Erro ao criar tipo de exame: {str(e)}'}), 500

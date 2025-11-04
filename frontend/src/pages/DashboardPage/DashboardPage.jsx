@@ -6,7 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../hooks/useAuth';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDashboardSummary } from '../../hooks/useDashboardSummary';
-import { useUltimosAgendamentos } from '../../hooks/useUltimosAgendamentos'; // novo hook
+import { useUltimosAgendamentos } from '../../hooks/useUltimosAgendamentos';
 
 export default function DashboardPage() {
   const { user, isSesmit, isGestor, isColaborador } = useAuth();
@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const navItems = [
     { key: 'dashboard', label: 'Dashboard', to: '/dashboard', icon: '🏠', active: location.pathname === '/dashboard' },
     { key: 'exames', label: 'Exames', to: '/exames', icon: '📋', active: location.pathname === '/exames' },
+    { key: 'cats', label: 'CATs', to: '/cats', icon: '🚨', active: location.pathname === '/cats' }, // ✅ ADICIONADO
     { key: 'colaboradores', label: 'Colaboradores', to: '/colaboradores', icon: '👥', active: location.pathname === '/colaboradores' },
     { key: 'riscos', label: 'Riscos', to: '/riscos', icon: '⚠️', active: location.pathname === '/riscos' },
     { key: 'vinculos', label: 'Vínculos', to: '/vinculos', icon: '🔗', active: location.pathname === '/vinculos' },
@@ -108,6 +109,7 @@ export default function DashboardPage() {
             <Card title="Ações Rápidas">
               <div style={{ display: 'flex', gap: 8 }}>
                 <Button onClick={() => navigate('/exames')}>Exames</Button>
+                <Button variant="primary" onClick={() => navigate('/cats')}>CATs</Button> {/* ✅ ADICIONADO */}
                 {isSesmit && <Button variant="primary" onClick={() => navigate('/colaboradores')}>Colaboradores</Button>}
               </div>
             </Card>

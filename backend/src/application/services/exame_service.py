@@ -150,3 +150,10 @@ class ExameService:
         db.session.delete(agendamento)
         db.session.commit()
         return True
+    
+    @staticmethod
+    def listar_todos_agendamentos():
+        """
+        Lista todos os agendamentos com joins para trazer dados relacionados
+        """
+        return Agendamento.query.all()

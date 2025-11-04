@@ -7,6 +7,7 @@ import ColaboradoresPage from './pages/ColaboradoresPage/ColaboradoresPage';
 import RiscosPage from './pages/RiscosPage/RiscosPage';
 import CargoRiscoPage from './pages/CargoRiscoPage/CargoRiscoPage'; // ✅ NOVA PÁGINA
 import { Loading } from './components/ui/Loading';
+import CATsPage from './pages/CATsPage/CATsPage';
 
 function App() {
   const { isAuthenticated, loading } = useAuth();
@@ -65,6 +66,8 @@ function App() {
           path="/" 
           element={<Navigate to={isAuthenticated ? "/dashboard" : "/auth"} replace />} 
         />
+
+        <Route path="/cats" element={<CATsPage />} />
 
         {/* Rota de fallback */}
         <Route 

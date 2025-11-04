@@ -272,6 +272,37 @@ export const riscoService = {
 };
 
 // =========================
+// CAT (Comunicação de Acidente de Trabalho)
+// =========================
+export const catService = {
+  listar() {
+    return api.get('/cats');
+  },
+
+  buscar(id) {
+    return api.get(`/cats/${id}`);
+  },
+
+  criar(dadosCAT) {
+    return api.post('/cats', dadosCAT);
+  },
+
+  atualizar(id, dadosCAT) {
+    return api.put(`/cats/${id}`, dadosCAT);
+  },
+
+  deletar(id) {
+    return api.delete(`/cats/${id}`);
+  },
+
+  gerarPDF(id) {
+    return api.get(`/cats/${id}/gerar-pdf`, {
+      responseType: 'blob' // Importante para download de arquivos
+    });
+  }
+};
+
+// =========================
 // EXPORTAÇÕES INDIVIDUAIS (para compatibilidade)
 // =========================
 
@@ -305,6 +336,14 @@ export const deletarRisco = (id, token) => riscoService.deletar(id);
 export const vincularExamesRisco = (riscoId, exameIds, token) => riscoService.vincularExames(riscoId, exameIds);
 
 export const getDashboardSummary = () => dashboardService.summary();
+
+// Exportação individual para compatibilidade
+export const listarCATs = (token) => catService.listar();
+export const buscarCAT = (id, token) => catService.buscar(id);
+export const criarCAT = (dadosCAT, token) => catService.criar(dadosCAT);
+export const atualizarCAT = (id, dadosCAT, token) => catService.atualizar(id, dadosCAT);
+export const deletarCAT = (id, token) => catService.deletar(id);
+export const gerarPDFCAT = (id, token) => catService.gerarPDF(id);
 
 
 // Exportação padrão para compatibilidade
