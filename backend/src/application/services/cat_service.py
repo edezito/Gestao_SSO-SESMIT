@@ -32,9 +32,15 @@ class CATService:
         return nova_cat
 
     @staticmethod
-    def listar_cats():
+    def listar_todas_cats():
+        """✅ Renomeado: Busca TODAS as CATs."""
         return CATModel.query.order_by(CATModel.criado_em.desc()).all()
-
+    
+    @staticmethod
+    def listar_cats_por_colaborador(colaborador_id: int):
+        """✅ NOVO MÉTODO: Busca CATs apenas de um colaborador específico."""
+        return CATModel.query.filter_by(colaborador_id=colaborador_id).order_by(CATModel.criado_em.desc()).all()
+    
     @staticmethod
     def buscar_cat(cat_id):
         return CATModel.query.get(cat_id)

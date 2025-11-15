@@ -1,7 +1,10 @@
 from flask import Blueprint, request, jsonify, send_file
-from flask_jwt_extended import jwt_required
+# ✅ 1. Importar current_user e AuthorizationService
+from flask_jwt_extended import jwt_required, current_user
 from src.application.services.cat_service import CATService
 from src.utils.role_required import role_required
+# ✅ 2. Importar o serviço de autorização
+from src.application.services.authorization_service import AuthorizationService
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -32,10 +35,28 @@ def criar_cat():
 
 @cat_bp.route("/", methods=["GET"])
 @jwt_required()
-@role_required(lambda authz: authz.pode_listar_cat())
+# ✅ 3. MUDANÇA DE DECORATOR:
+# Usar uma permissão genérica que SÓ verifica se o usuário está logado.
+@role_required(lambda authz: authz.pode_gerar_pdf_cat())
 def listar_cats():
+    """
+    Lista CATs de forma inteligente:
+    - SESMIT/GESTOR/CIPA: Lista todas.
+    - COLABORADOR: Lista apenas as suas.
+    """
     try:
-        cats = CATService.listar_cats()
+        # ✅ 4. LÓGICA INTELIGENTE:
+        auth_service = AuthorizationService(current_user)
+        
+        # Verifica se o usuário tem permissão para ver a lista COMPLETA
+        if auth_service.pode_listar_cat(): # 'pode_listar_cat' é a regra de admin
+            print(f"🔍 [AUTH] {current_user.email} é admin. Listando todas as CATs.")
+            cats = CATService.listar_todas_cats() # Usa o novo método
+        else:
+            # Se não for admin, é um Colaborador e só pode ver as suas
+            print(f"🔍 [AUTH] {current_user.email} é Colaborador. Listando apenas suas CATs.")
+            cats = CATService.listar_cats_por_colaborador(current_user.id) # Usa o novo método
+
         return jsonify([c.to_dict() for c in cats])
     except Exception as e:
         print(f"Erro ao listar CATs: {str(e)}")
@@ -44,7 +65,10 @@ def listar_cats():
 
 @cat_bp.route("/<int:cat_id>", methods=["GET"])
 @jwt_required()
-@role_required(lambda authz: authz.pode_listar_cat())
+# ✅ 5. MUDANÇA DE DECORATOR:
+# Usar a nova permissão 'pode_visualizar_cat' que verifica
+# se é admin OU se é o dono da CAT.
+@role_required(lambda authz: authz.pode_visualizar_cat(cat_id))
 def buscar_cat(cat_id):
     try:
         cat = CATService.buscar_cat(cat_id)
@@ -86,7 +110,9 @@ def deletar_cat(cat_id):
 # -----------------------------
 @cat_bp.route("/<int:cat_id>/gerar-pdf", methods=["GET"])
 @jwt_required()
-@role_required(lambda authz: authz.pode_gerar_pdf_cat())
+# ✅ 6. MUDANÇA DE DECORATOR (Correção de Segurança):
+# Deve usar a MESMA permissão de 'buscar_cat'.
+@role_required(lambda authz: authz.pode_visualizar_cat(cat_id))
 def gerar_pdf_cat(cat_id):
     """
     Gera o PDF oficial da Comunicação de Acidente de Trabalho (CAT)
