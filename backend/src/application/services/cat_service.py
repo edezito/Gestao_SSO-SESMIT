@@ -33,16 +33,17 @@ class CATService:
 
     @staticmethod
     def listar_todas_cats():
-        """✅ Renomeado: Busca TODAS as CATs."""
+        """✅ Busca TODAS as CATs."""
         return CATModel.query.order_by(CATModel.criado_em.desc()).all()
     
     @staticmethod
     def listar_cats_por_colaborador(colaborador_id: int):
-        """✅ NOVO MÉTODO: Busca CATs apenas de um colaborador específico."""
+        """✅ Busca CATs apenas de um colaborador específico."""
         return CATModel.query.filter_by(colaborador_id=colaborador_id).order_by(CATModel.criado_em.desc()).all()
     
     @staticmethod
     def buscar_cat(cat_id):
+        # O .get() já é a forma mais rápida de buscar pela PK
         return CATModel.query.get(cat_id)
 
     @staticmethod
@@ -50,9 +51,22 @@ class CATService:
         cat = CATModel.query.get(cat_id)
         if not cat:
             raise ValueError("CAT não encontrada")
+        
+        # Lista de campos permitidos para atualização
+        # Isso evita que dados sensíveis (como 'id' ou 'colaborador_id') sejam mudados
+        campos_permitidos = [
+            'data_acidente', 'local_acidente', 'descricao', 'testemunhas',
+            'tipo_acidente', 'comunicante', 'status', 'cargo_id'
+        ]
+
         for campo, valor in dados.items():
-            if hasattr(cat, campo) and valor is not None:
-                setattr(cat, campo, valor)
+            if campo in campos_permitidos and valor is not None:
+                # Tratamento especial para data, se vier como string ISO
+                if campo == 'data_acidente' and isinstance(valor, str):
+                    setattr(cat, campo, datetime.fromisoformat(valor))
+                else:
+                    setattr(cat, campo, valor)
+                    
         db.session.commit()
         return cat
 

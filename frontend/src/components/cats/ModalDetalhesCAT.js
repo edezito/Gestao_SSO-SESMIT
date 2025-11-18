@@ -1,10 +1,15 @@
-// src/components/cats/ModalDetalhesCAT.js
 import React from 'react';
 import { Button } from '../ui/Button';
 import modalStyles from '../../styles/Modal.module.css';
 
 export default function ModalDetalhesCAT({ cat, onClose, onEditar, onGerarPDF }) {
   if (!cat) return null;
+
+  // Função local para tratar o clique do PDF no modal
+  const handleDownloadPDF = (e) => {
+    if (e) e.preventDefault();
+    if (onGerarPDF) onGerarPDF();
+  };
 
   return (
     <div className={modalStyles.overlay}>
@@ -53,7 +58,7 @@ export default function ModalDetalhesCAT({ cat, onClose, onEditar, onGerarPDF })
                     background: cat.status === 'FINALIZADA' ? '#d1fae5' : 
                                cat.status === 'CANCELADA' ? '#fee2e2' : '#fef3c7',
                     color: cat.status === 'FINALIZADA' ? '#065f46' : 
-                          cat.status === 'CANCELADA' ? '#991b1b' : '#92400e'
+                           cat.status === 'CANCELADA' ? '#991b1b' : '#92400e'
                   }}>
                     {cat.status}
                   </span>
@@ -94,15 +99,17 @@ export default function ModalDetalhesCAT({ cat, onClose, onEditar, onGerarPDF })
         </div>
 
         <div className={modalStyles.footer}>
-          <Button variant="outline" onClick={onGerarPDF}>
+          {/* CORREÇÃO AQUI: type="button" e manipulador de evento */}
+          <Button variant="outline" type="button" onClick={handleDownloadPDF}>
             📄 Gerar PDF
           </Button>
+          
           <div style={{ display: 'flex', gap: 8 }}>
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" type="button" onClick={onClose}>
               Fechar
             </Button>
             {onEditar && (
-              <Button variant="primary" onClick={onEditar}>
+              <Button variant="primary" type="button" onClick={onEditar}>
                 ✏️ Editar
               </Button>
             )}

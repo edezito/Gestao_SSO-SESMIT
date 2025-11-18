@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCATs } from '../../hooks/useCATs';
 import Layout from '../../components/Layout/Layout';
-import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import ListaCATs from '../../components/cats/ListaCATs';
 import FormCAT from '../../components/cats/FormCAT';
@@ -166,6 +165,7 @@ export default function CATsPage() {
                 <ListaCATs 
                   onEditar={handleEditar}
                   onVerDetalhes={handleVerDetalhes}
+                  onGerarPDF={handleGerarPDF}
                 />
               </div>
             )}

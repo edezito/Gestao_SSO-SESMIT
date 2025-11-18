@@ -1,4 +1,3 @@
-// src/components/cats/ListaCATs.js
 import React from 'react';
 import { useCATs } from '../../hooks/useCATs';
 import { useAuth } from '../../hooks/useAuth';
@@ -24,7 +23,13 @@ export default function ListaCATs({ onEditar, onVerDetalhes }) {
     }
   };
 
-  const handleGerarPDF = async (id) => {
+  // CORREÇÃO 1: Receber o evento 'e' e prevenir comportamento padrão
+  const handleGerarPDF = async (id, e) => {
+    if (e) {
+      e.preventDefault();  // Impede recarregar a página
+      e.stopPropagation(); // Impede clicar na linha da tabela (se houver evento na tr)
+    }
+
     try {
       await gerarPDF(id);
     } catch (err) {
@@ -90,15 +95,19 @@ export default function ListaCATs({ onEditar, onVerDetalhes }) {
                     <Button 
                       size="small" 
                       variant="outline"
+                      // Adicione type="button" se o seu componente Button aceitar props nativas
+                      type="button" 
                       onClick={() => onVerDetalhes(cat)}
                     >
                       👁️ Ver
                     </Button>
                     
+                    {/* CORREÇÃO 2: type="button" e passar o evento 'e' */}
                     <Button 
                       size="small" 
                       variant="outline"
-                      onClick={() => handleGerarPDF(cat.id)}
+                      type="button"
+                      onClick={(e) => handleGerarPDF(cat.id, e)}
                     >
                       📄 PDF
                     </Button>
@@ -107,6 +116,7 @@ export default function ListaCATs({ onEditar, onVerDetalhes }) {
                       <Button 
                         size="small" 
                         variant="primary"
+                        type="button"
                         onClick={() => onEditar(cat)}
                       >
                         ✏️ Editar
@@ -117,6 +127,7 @@ export default function ListaCATs({ onEditar, onVerDetalhes }) {
                       <Button 
                         size="small" 
                         variant="danger"
+                        type="button"
                         onClick={() => handleDeletar(cat.id)}
                       >
                         🗑️ Excluir

@@ -1,74 +1,153 @@
-import React from 'react';
-import { useApi } from '../../hooks/useApi';
+import React, { useState, useEffect } from 'react';
+import { listarTodosExames, gerarPDFAgendamento, deletarAgendamento } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
+import { Button } from '../ui/Button';
 import { Loading } from '../ui/Loading';
 import { ErrorMessage } from '../ui/ErrorMessage';
-import tableStyles from '../../styles/Table.module.css';
+import tableStyles from '../../styles/Table.module.css'; // Usando o mesmo CSS da CAT
 
-function ListaExames() {
-  const { user, isGestor, isSesmit } = useAuth();
-  
-  // ✅ Gestor/SESMIT veem todos, Colaborador só os seus
-  const { 
-    data: exames, 
-    loading, 
-    error, 
-    refetch 
-  } = useApi('/exames/agendamentos');
+export default function ListaExames() {
+  const [exames, setExames] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { isSesmit, isGestor } = useAuth();
 
-  const getStatusClassName = (status) => {
-    switch (status?.toUpperCase()) {
-      case 'PENDENTE': return tableStyles.statusPendente;
-      case 'VENCIDO': return tableStyles.statusVencido;
-      case 'REALIZADO': return tableStyles.statusRealizado;
-      default: return tableStyles.statusPendente;
+  const temPermissaoEdicao = isSesmit || isGestor;
+
+  // Função para buscar dados
+  const fetchExames = async () => {
+    try {
+      setLoading(true);
+      const data = await listarTodosExames();
+      setExames(data);
+      setError(null);
+    } catch (err) {
+      setError('Erro ao carregar exames: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) return <Loading message="Carregando exames..." />;
-  if (error) return <ErrorMessage message={error} onRetry={refetch} />;
+  useEffect(() => {
+    fetchExames();
+  }, []);
+
+  // --- LÓGICA DE EMISSÃO DE PDF (Igual à da CAT) ---
+  const handleEmitirGuia = async (id, e) => {
+    // 1. Previne comportamento padrão e propagação
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    try {
+      console.log(`Iniciando emissão para exame ${id}...`);
+      await gerarPDFAgendamento(id);
+    } catch (err) {
+      alert('Erro ao emitir guia: ' + err.message);
+    }
+  };
+
+  const handleDeletar = async (id) => {
+    if (window.confirm('Tem certeza que deseja cancelar este agendamento?')) {
+      try {
+        await deletarAgendamento(id); // Supondo que exista na api.js
+        fetchExames(); // Recarrega a lista
+      } catch (err) {
+        alert('Erro ao cancelar: ' + err.message);
+      }
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const map = {
+      'AGENDADO': { label: 'Agendado', class: tableStyles.statusPendente },
+      'REALIZADO': { label: 'Realizado', class: tableStyles.statusRealizado },
+      'CANCELADO': { label: 'Cancelado', class: tableStyles.statusVencido },
+      'PENDENTE': { label: 'Pendente', class: tableStyles.statusPendente }
+    };
+    
+    const config = map[status?.toUpperCase()] || map['PENDENTE'];
+
+    return (
+      <span className={`${tableStyles.statusCell} ${config.class}`}>
+        {config.label}
+      </span>
+    );
+  };
+
+  if (loading) return <Loading message="Carregando agendamentos..." />;
+  if (error) return <ErrorMessage message={error} onRetry={fetchExames} />;
 
   return (
     <div className={tableStyles.container}>
-      <h2 className={tableStyles.title}>
-        {isGestor || isSesmit ? 'Todos os Exames Agendados' : 'Meus Exames Agendados'}
-      </h2>
-      
+      <div className={tableStyles.header}>
+        <h2 className={tableStyles.title}>Agendamentos de Exames</h2>
+        <Button variant="outline" onClick={fetchExames} size="small">
+          🔄 Atualizar
+        </Button>
+      </div>
+
       <table className={tableStyles.table}>
         <thead>
           <tr>
-            {(isGestor || isSesmit) && <th className={tableStyles.th}>Colaborador</th>}
+            <th className={tableStyles.th}>ID</th>
+            <th className={tableStyles.th}>Colaborador</th>
             <th className={tableStyles.th}>Exame</th>
-            <th className={tableStyles.th}>Tipo</th>
-            <th className={tableStyles.th}>Data Agendada</th>
+            <th className={tableStyles.th}>Data</th>
             <th className={tableStyles.th}>Status</th>
+            <th className={tableStyles.th}>Ações</th>
           </tr>
         </thead>
         <tbody>
-          {exames && exames.length > 0 ? (
-            exames.map(exame => (
+          {exames.length > 0 ? (
+            exames.map((exame) => (
               <tr key={exame.id}>
-                {/* ✅ Apenas Gestor/SESMIT veem nome do colaborador */}
-                {(isGestor || isSesmit) && (
-                  <td className={tableStyles.td}>{exame.colaborador_nome || exame.colaborador?.nome || '---'}</td>
-                )}
-                <td className={tableStyles.td}>{exame.exame_nome || exame.exame?.nome || '---'}</td>
-                <td className={tableStyles.td}>{exame.tipo_exame}</td>
+                <td className={tableStyles.td}>#{exame.id}</td>
+                <td className={tableStyles.td}>
+                  {exame.colaborador?.nome || '---'}
+                </td>
+                <td className={tableStyles.td}>
+                  {exame.exame?.nome || exame.tipo_exame || '---'}
+                </td>
                 <td className={tableStyles.td}>
                   {exame.data_agendamento ? 
-                    new Date(exame.data_agendamento).toLocaleString('pt-BR') : '---'
-                  }
+                    new Date(exame.data_agendamento).toLocaleDateString('pt-BR') : 'A definir'}
                 </td>
-                <td className={`${tableStyles.statusCell} ${getStatusClassName(exame.status)}`}>
-                  {exame.status || 'PENDENTE'}
+                <td className={tableStyles.td}>
+                  {getStatusBadge(exame.status)}
+                </td>
+                <td className={tableStyles.td}>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    
+                    {/* BOTÃO DE EMITIR PDF */}
+                    <Button 
+                      size="small" 
+                      variant="outline"
+                      type="button" // Importante para evitar refresh
+                      onClick={(e) => handleEmitirGuia(exame.id, e)}
+                      title="Baixar Comprovante de Agendamento"
+                    >
+                      🖨️ Emitir Guia
+                    </Button>
+
+                    {temPermissaoEdicao && (
+                      <Button 
+                        size="small" 
+                        variant="danger"
+                        type="button"
+                        onClick={() => handleDeletar(exame.id)}
+                      >
+                        🗑️
+                      </Button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))
           ) : (
             <tr className={tableStyles.emptyRow}>
-              <td colSpan={isGestor || isSesmit ? 5 : 4}>
-                Nenhum exame encontrado.
-              </td>
+              <td colSpan="6">Nenhum exame agendado encontrado.</td>
             </tr>
           )}
         </tbody>
@@ -76,5 +155,3 @@ function ListaExames() {
     </div>
   );
 }
-
-export default ListaExames;

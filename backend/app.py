@@ -40,7 +40,7 @@ def create_app():
             "Content-Type", "Authorization", "Access-Control-Allow-Origin",
             "Access-Control-Allow-Headers", "X-Requested-With"
         ],
-        expose_headers=["Content-Type", "Authorization"],
+        expose_headers=["Content-Type", "Authorization", "Content-Disposition"], 
         max_age=3600
     )
 

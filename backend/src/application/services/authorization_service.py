@@ -18,7 +18,6 @@ class AuthorizationService:
     def pode_criar_exame(self, usuario_alvo_id=None):
         """
         SESMIT e GESTOR podem criar exames
-        (Regra original já estava correta)
         """
         print(f"🔐 Verificando permissão para criar exame: usuario={self.usuario.id}, perfil={self._perfil}, alvo={usuario_alvo_id}")
         
@@ -31,7 +30,6 @@ class AuthorizationService:
 
     def pode_listar_exames(self):
         """Todos os perfis autenticados podem listar exames"""
-        # (Regra original já estava correta)
         return bool(self.usuario)
 
     def pode_crud_cargos(self):
@@ -43,13 +41,13 @@ class AuthorizationService:
         ✅ REVISADO:
         SESMIT: acesso total
         GESTOR: NÃO TEM MAIS ACESSO TOTAL
-        COLABORADOR: apenas seus próprios agendamentos (lógica mantida)
+        COLABORADOR: apenas seus próprios agendamentos
         """
         # ✅ REVISADO: Apenas SESMIT tem acesso total
         if self._tem_perfil("SESMIT"):
             return True
 
-        # Lógica de self-service do Colaborador (mantida)
+        # Lógica de self-service do Colaborador
         if self._tem_perfil("COLABORADOR"):
             # Verifica por agendamento específico
             if agendamento_id:
@@ -67,7 +65,6 @@ class AuthorizationService:
         """
         SESMIT/GESTOR: podem ver qualquer usuário
         COLABORADOR: só pode ver seu próprio perfil
-        (Regra original já estava correta, interpretando "todos" como os perfis de gestão)
         """
         if self._tem_perfil("SESMIT", "GESTOR"):
             return True
@@ -76,7 +73,6 @@ class AuthorizationService:
 
     # ===============================
     # Permissões específicas para CAT
-    # (Não foram mencionadas na revisão, mantidas como estavam)
     # ===============================
     def pode_criar_cat(self):
         return self._tem_perfil("SESMIT", "GESTOR")
@@ -93,7 +89,7 @@ class AuthorizationService:
 
     def pode_visualizar_cat(self, cat_id: int):
         """
-        ✅ NOVA PERMISSÃO (Corrige falha de segurança):
+        ✅ NOVA PERMISSÃO:
         - Admin (SESMIT/GESTOR/CIPA) pode ver qualquer CAT.
         - Colaborador pode ver a CAT apenas se for dele.
         """
@@ -113,3 +109,35 @@ class AuthorizationService:
         A verificação de dono será feita por 'pode_visualizar_cat'.
         """
         return bool(self.usuario)
+
+    # ===============================
+    # NOVAS PERMISSÕES PARA PDF
+    # ===============================
+    
+    def pode_gerar_pdf_agendamento(self, agendamento_id: int = None):
+        """
+        Permissão para gerar PDF de agendamento:
+        - SESMIT: pode gerar qualquer PDF
+        - COLABORADOR: só pode gerar PDF dos próprios agendamentos
+        - GESTOR: não tem acesso a PDFs de agendamento (conforme regra revisada)
+        """
+        if self._tem_perfil("SESMIT"):
+            return True
+            
+        if self._tem_perfil("COLABORADOR") and agendamento_id:
+            agendamento = Agendamento.query.get(agendamento_id)
+            return agendamento and agendamento.colaborador_id == self.usuario.id
+            
+        return False
+
+    def pode_gerenciar_riscos(self):
+        """Permissão para gerenciar riscos ocupacionais"""
+        return self._tem_perfil("SESMIT", "GESTOR")
+
+    def pode_acessar_dashboard(self):
+        """Permissão para acessar dashboard administrativo"""
+        return self._tem_perfil("SESMIT", "GESTOR", "CIPA")
+
+    def pode_gerar_relatorios(self):
+        """Permissão para gerar relatórios do sistema"""
+        return self._tem_perfil("SESMIT", "GESTOR")
