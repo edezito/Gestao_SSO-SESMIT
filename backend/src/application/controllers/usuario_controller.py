@@ -9,7 +9,7 @@ from src.utils.role_required import role_required
 usuario_bp = Blueprint("usuario_bp", __name__)
 
 # -----------------------------
-# CADASTRO PÚBLICO (sem autenticação)
+# CADASTRO PÚBLICO (sem login)
 # -----------------------------
 @usuario_bp.route("/cadastro", methods=["POST"])
 def cadastrar_usuario():
@@ -34,7 +34,7 @@ def cadastrar_usuario():
         return jsonify({"erro": str(e)}), 400
 
 # -----------------------------
-# LOGIN (sem autenticação)
+# LOGIN
 # -----------------------------
 @usuario_bp.route("/login", methods=["POST"])
 def login():
@@ -51,12 +51,12 @@ def login():
         return jsonify({"erro": str(e)}), 400
 
 # -----------------------------
-# Listar usuários/colaboradores
+# LISTAR COLABORADORES
 # -----------------------------
 @usuario_bp.route("/colaboradores", methods=["GET"])
-@jwt_required() 
-@role_required(lambda authz: authz.pode_administrar_usuarios())
-def listar_colaboradores():  # ✅ Remove authz parameter
+@jwt_required()
+@role_required(lambda authz: authz.pode_listar_colaboradores())
+def listar_colaboradores():
     usuarios = UsuarioService.listar_usuarios()
     return jsonify([{
         "id": u.id,
@@ -68,11 +68,11 @@ def listar_colaboradores():  # ✅ Remove authz parameter
     } for u in usuarios])
 
 # -----------------------------
-# Buscar usuário por ID
+# BUSCAR COLABORADOR POR ID
 # -----------------------------
 @usuario_bp.route("/colaboradores/<int:usuario_id>", methods=["GET"])
-@jwt_required() 
-@role_required(lambda authz: authz.pode_visualizar_usuario(usuario_id))  # ✅ Nova permissão
+@jwt_required()
+@role_required(lambda authz: authz.pode_visualizar_usuario(usuario_id))
 def buscar_colaborador(usuario_id):
     usuario = UsuarioService.buscar_usuario_por_id(usuario_id)
     if not usuario:
@@ -89,12 +89,13 @@ def buscar_colaborador(usuario_id):
     })
 
 # -----------------------------
-# Criar usuário (com autenticação)
+# CRIAR UM NOVO COLABORADOR
+# (GESTOR)
 # -----------------------------
 @usuario_bp.route("/colaboradores", methods=["POST"])
-@jwt_required() 
+@jwt_required()
 @role_required(lambda authz: authz.pode_administrar_usuarios())
-def criar_colaborador():  # ✅ Remove authz parameter
+def criar_colaborador():
     dados = request.json
     try:
         user_domain = UserDomain(
@@ -116,13 +117,19 @@ def criar_colaborador():  # ✅ Remove authz parameter
         return jsonify({"erro": str(e)}), 400
 
 # -----------------------------
-# Atualizar usuário
+# ATUALIZAR USUÁRIO
+# (GESTOR / COLABORADOR SOMENTE PARA SI MESMO)
 # -----------------------------
 @usuario_bp.route("/colaboradores/<int:usuario_id>", methods=["PUT"])
-@jwt_required() 
+@jwt_required()
 @role_required(lambda authz: authz.pode_administrar_usuarios() or authz.usuario.id == usuario_id)
 def atualizar_colaborador(usuario_id):
     dados = request.json
+
+    # impedir que colaborador altere perfil, cargo, ativo
+    if current_user.perfil.upper() == "COLABORADOR":
+        dados = {k: v for k, v in dados.items() if k in ["nome", "senha"]}
+
     try:
         usuario_atualizado = UsuarioService.atualizar_usuario(
             usuario_id=usuario_id,
@@ -139,19 +146,20 @@ def atualizar_colaborador(usuario_id):
         return jsonify({"erro": str(e)}), 400
 
 # -----------------------------
-# Deletar usuário (inativar)
+# INATIVAR USUÁRIO
+# (GESTOR)
 # -----------------------------
 @usuario_bp.route("/colaboradores/<int:usuario_id>", methods=["DELETE"])
-@jwt_required() 
+@jwt_required()
 @role_required(lambda authz: authz.pode_administrar_usuarios())
-def deletar_colaborador(usuario_id):  # ✅ Remove authz parameter
+def deletar_colaborador(usuario_id):
     try:
-        usuario_inativado = UsuarioService.inativar_usuario(usuario_id) 
+        usuario_inativado = UsuarioService.inativar_usuario(usuario_id)
         return jsonify({
             "msg": f"Usuário {usuario_inativado.nome} inativado com sucesso",
             "ativo": usuario_inativado.ativo
         })
     except ValueError as e:
         return jsonify({"erro": str(e)}), 404
-    except Exception as e:
+    except Exception:
         return jsonify({"erro": "Erro ao inativar usuário"}), 500

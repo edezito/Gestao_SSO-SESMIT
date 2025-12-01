@@ -6,8 +6,9 @@ WORKDIR /app
 
 # Copiar package lock/manifest antes para aproveitar cache
 COPY package*.json ./
-# Use npm ci para installs reprodutíveis
-RUN npm ci
+
+# Instalar dependências e atualizar baseline-browser-mapping
+RUN npm ci && npm install baseline-browser-mapping@latest --save-dev
 
 # Copia fontes e build
 COPY . .
@@ -15,6 +16,7 @@ RUN npm run build
 
 # --- Production stage
 FROM nginx:alpine
+
 # Copia build estático
 COPY --from=build /app/build /usr/share/nginx/html
 
